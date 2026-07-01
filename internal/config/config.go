@@ -22,6 +22,8 @@ const (
 const (
 	TextFormat = "text"
 	JsonFormat = "json"
+	Stdout     = "stdout"
+	Stderr     = "stderr"
 )
 
 // Config with tags from cleanenv library
