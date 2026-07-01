@@ -2,6 +2,7 @@ package logger
 
 import (
 	"chat-gateway/internal/config"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,10 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type logrusLogger struct {
-	entry *logrus.Entry
-	files []*os.File
-}
+var _files []*os.File
 
 func NewLogrusLogger(cfg *config.LoggerConfig) (*logrus.Logger, error) {
 	l := logrus.New()
@@ -51,7 +49,7 @@ func NewLogrusLogger(cfg *config.LoggerConfig) (*logrus.Logger, error) {
 
 	// Set logger on output stream (Stdout, Stderr, Files)
 	writers := make([]io.Writer, 0, len(cfg.Files))
-	files := make([]*os.File, 0, len(cfg.Files))
+	_files = make([]*os.File, 0, len(cfg.Files))
 
 	switch cfg.Output {
 	case config.Stdout:
@@ -68,10 +66,29 @@ func NewLogrusLogger(cfg *config.LoggerConfig) (*logrus.Logger, error) {
 			return nil, fmt.Errorf("failed to open file %s: %w", filename, err)
 		}
 		writers = append(writers, file)
-		files = append(files, file)
+		_files = append(_files, file)
 	}
 
 	l.SetOutput(io.MultiWriter(writers...))
 
 	return l, nil
+}
+
+// Closing logger for graceful shutdown
+func Close() error {
+	errs := make([]error, 0, len(_files))
+
+	for _, file := range _files {
+		if err := file.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) == 0 {
+		return nil
+	} else if len(errs) == 1 {
+		return fmt.Errorf("error of closing files: %w", errs[0])
+	}
+
+	return fmt.Errorf("error of closing files: %w", errors.Join(errs...))
 }
