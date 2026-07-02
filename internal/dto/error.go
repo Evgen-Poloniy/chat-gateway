@@ -7,8 +7,8 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// ErrorResponse wraps Error in "error" field
-// swagger:model ErrorResponse
-type ErrorResponse struct {
+// ResponseError wraps Error in "error" field
+// swagger:model ResponseError
+type ResponseError struct {
 	Error Error `json:"error"`
 }

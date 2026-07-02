@@ -46,10 +46,20 @@ type LoggerConfig struct {
 	Files  []string `yaml:"files"`
 }
 
+// CORSConfig is the config for CORS policy
+type CORSConfig struct {
+	AllowedOrigin    string        `yaml:"allowed_origin"`
+	AllowCredentials bool          `yaml:"allow_credentials"`
+	AllowedHeaders   []string      `yaml:"allowed_headers"`
+	AllowedMethods   []string      `yaml:"allowed_methods"`
+	MaxAge           time.Duration `yaml:"max_age" validate:"required,gte=1m,lte=24h"`
+}
+
 // Dataclass with all configs
 type Config struct {
 	Server ServerConfig `yaml:"server"`
 	Logger LoggerConfig `yaml:"logger"`
+	CORS   CORSConfig   `yaml:"cors"`
 }
 
 // Load config from config/config.yaml

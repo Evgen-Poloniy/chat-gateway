@@ -13,25 +13,12 @@ func ErrorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
-			statusCode := c.Writer.Status()
+			statusCode := c.MustGet("status_code").(int)
+			code := c.MustGet("code").(string)
 
-			if code, exists := c.Get("code"); exists {
-				codeStr, ok := code.(string)
-				if !ok {
-					codeStr = "UNKNOWN_ERROR"
-				}
-
-				c.AbortWithStatusJSON(statusCode, dto.ErrorResponse{
-					Error: dto.Error{
-						Code:    codeStr,
-						Message: err.Error(),
-					},
-				})
-			}
-
-			c.AbortWithStatusJSON(statusCode, dto.ErrorResponse{
+			c.AbortWithStatusJSON(statusCode, dto.ResponseError{
 				Error: dto.Error{
-					Code:    "UNKNOWN_ERROR",
+					Code:    code,
 					Message: err.Error(),
 				},
 			})
@@ -45,8 +32,8 @@ func ErrorHandler() gin.HandlerFunc {
 			return
 		}
 
+		var statusCode int
 		var code string
-		statusCode := c.Writer.Status()
 		err := c.Errors.Last().Err
 
 		// Error mapping
@@ -65,7 +52,10 @@ func ErrorHandler() gin.HandlerFunc {
 			c.Error(errors.New("unknown error"))
 		}
 
-		c.JSON(statusCode, dto.ErrorResponse{
+		c.Set("status_code", statusCode)
+		c.Set("code", code)
+
+		c.JSON(statusCode, dto.ResponseError{
 			Error: dto.Error{
 				Code:    code,
 				Message: err.Error(),

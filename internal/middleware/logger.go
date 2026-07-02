@@ -9,10 +9,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Logger writes logs for each request and response
 func Logger(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var statusCode int
+		var code string
+
 		id := uuid.New().String()
 
 		entry := logger.WithFields(map[string]interface{}{
@@ -24,13 +25,14 @@ func Logger(logger *logrus.Logger) gin.HandlerFunc {
 
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
-			statusCode = c.Writer.Status()
 
-			entry = entry.WithField("status_code", statusCode)
+			statusCode, _ = c.MustGet("status_code").(int)
+			code, _ = c.MustGet("code").(string)
 
-			if code, exists := c.Get("code"); exists {
-				entry = entry.WithField("code", code)
-			}
+			entry = entry.WithFields(map[string]interface{}{
+				"status_code": statusCode,
+				"code":        code,
+			})
 
 			if statusCode >= 500 {
 				entry.Error(err.Error())
@@ -71,11 +73,10 @@ func Logger(logger *logrus.Logger) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
 
-			entry = entry.WithField("status_code", statusCode)
+			statusCode, _ = c.MustGet("status_code").(int)
+			code, _ := c.MustGet("code").(string)
 
-			if code, exists := c.Get("code"); exists {
-				entry = entry.WithField("code", code)
-			}
+			entry = entry.WithField("code", code)
 
 			if statusCode >= 500 {
 				entry.Error(err.Error())

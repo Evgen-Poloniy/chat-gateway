@@ -52,7 +52,7 @@ func Run() {
 	}()
 
 	v1Handler := v1.NewHandler()
-	router := router.NewRouter()
+	router := router.NewRouter(logger, &config.CORS)
 	v1.NewRouter(router, v1Handler)
 
 	var wg sync.WaitGroup

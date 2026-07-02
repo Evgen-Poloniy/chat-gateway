@@ -13,3 +13,20 @@ logger:
   format: text
   output: stdout
   files:
+
+# CORS policy
+cors:
+  allowed_origin: http://localhost:8080
+  allow_credentials: true
+  allowed_headers:
+    - Content-Type
+    - Content-Length
+    - Authorization
+    - X-API-Key
+    - Accept
+    - Origin
+    - User-Agent
+  allowed_methods:
+    - GET
+    - POST
+  max_age: 24h
