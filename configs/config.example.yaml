@@ -1,0 +1,15 @@
+# Server config
+server:
+  read_timeout: 4s
+  write_timeout: 10s
+  max_header_bytes: 1048576 # 1 MB
+  time_for_graceful_shutdown: 10s # seconds
+  read_header_timeout: "2s" # seconds
+  idle_timeout: "60s" # seconds
+
+# Logger config
+logger:
+  level: info
+  format: text
+  output: stdout
+  files:
