@@ -5,6 +5,7 @@ go 1.26.1
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-playground/validator/v10 v10.30.3
+	github.com/google/uuid v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/sirupsen/logrus v1.9.4
 	golang.org/x/crypto v0.53.0
