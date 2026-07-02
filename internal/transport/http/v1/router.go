@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(router *gin.Engine) {
+func NewRouter(router *gin.Engine, handler *Handler) {
 	v1 := router.Group("/api/v1")
 	{
 		v1.GET("/", nil)
