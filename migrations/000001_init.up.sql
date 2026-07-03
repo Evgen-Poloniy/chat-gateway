@@ -3,12 +3,23 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(32) UNIQUE NOT NULL,
     first_name VARCHAR(255) DEFAULT NULL,
     last_name VARCHAR(255) DEFAULT NULL,
-    birth_date DATE CHECK(AGE(birth_date)::INT BETWEEN 0 AND 150) DEFAULT NULL,
+    birth_date DATE DEFAULT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS username_idx ON users(username);
+CREATE TABLE IF NOT EXISTS chats (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    owner_id BIGINT DEFAULT NULL REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS chats_owner_id_idx ON chats(owner_id);
 
 CREATE TABLE IF NOT EXISTS chat_members (
-    chat_id BEGIN NOT NULL,
-    user_id BEGIN NOT NULL REFERENCES users(id)
+    chat_id BIGINT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (chat_id, user_id)
 );
+
+CREATE INDEX IF NOT EXISTS chat_members_user_id_idx ON chat_members(user_id);
