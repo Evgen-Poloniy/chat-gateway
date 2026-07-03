@@ -63,11 +63,11 @@ func Logger(logger *logrus.Logger) gin.HandlerFunc {
 
 		entry = logger.WithFields(map[string]interface{}{
 			"id":          id,
-			"status_code": statusCode,
 			"method":      c.Request.Method,
 			"path":        c.Request.URL.Path,
 			"ip":          c.ClientIP(),
 			"latency":     fmt.Sprintf("%v", latency),
+			"status_code": statusCode,
 		})
 
 		if len(c.Errors) > 0 {

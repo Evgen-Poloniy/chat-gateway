@@ -76,12 +76,12 @@ func WebSocketUpgrade(c *gin.Context, logger *logrus.Logger) {
 
 		if err := conn.Close(); err != nil {
 			logger.WithFields(map[string]interface{}{
-				"id":             id,
-				"method":         c.Request.Method,
-				"path":           c.Request.URL.Path,
-				"ip":             c.ClientIP(),
-				"ws_status_code": websocket.CloseInternalServerErr,
-				"code":           "FAILED_TO_CLOSE_WS",
+				"id":         id,
+				"method":     c.Request.Method,
+				"path":       c.Request.URL.Path,
+				"ip":         c.ClientIP(),
+				"close_code": websocket.CloseInternalServerErr,
+				"code":       "FAILED_TO_CLOSE_WS",
 			}).Error(fmt.Errorf("failed to close websocket connection: %w", err))
 		}
 	}()
