@@ -1,6 +1,9 @@
 package pg
 
-import "github.com/jmoiron/sqlx"
+import (
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
+)
 
 // PostgresRepository represents implementation of interface MessengerRepository
 type PostgresRepository struct {

@@ -1,14 +1,20 @@
 package repository
 
 import (
+	"chat-gateway/internal/entity"
 	pg "chat-gateway/internal/repository/postgres"
+	"context"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 )
 
 // MessengerRepository represents interface for work with the messenger database
 type MessengerRepository interface {
+	// GetUserIdByUsername allows get username from messenger database and get unique used_id
+	GetUserIdByUsername(ctx context.Context, username string) (int64, error)
+
+	// CreateUser allows create user into messenger database and get unique used_id
+	CreateUser(ctx context.Context, user *entity.User) (int64, error)
 }
 
 type Repository struct {
