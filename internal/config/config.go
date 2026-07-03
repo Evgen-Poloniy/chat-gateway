@@ -55,11 +55,22 @@ type CORSConfig struct {
 	MaxAge           time.Duration `yaml:"max_age" validate:"required,gte=1m,lte=24h"`
 }
 
+// Database config from env and config.yaml
+type DatabaseConfig struct {
+	Host     string `env:"DB_HOST" env-required:"true"`
+	Port     string `env:"DB_PORT" env-required:"true"`
+	Username string `env:"DB_USER" env-required:"true"`
+	Password string `env:"DB_PASSWORD" env-required:"true"`
+	DBName   string `env:"DB_NAME" env-required:"true"`
+	SSLMode  string `env:"SSL_MODE" env-required:"true" validate:"oneof=disable require"`
+}
+
 // Dataclass with all configs
 type Config struct {
-	Server ServerConfig `yaml:"server"`
-	Logger LoggerConfig `yaml:"logger"`
-	CORS   CORSConfig   `yaml:"cors"`
+	Server   ServerConfig   `yaml:"server"`
+	Logger   LoggerConfig   `yaml:"logger"`
+	CORS     CORSConfig     `yaml:"cors"`
+	Database DatabaseConfig `yaml:"-"`
 }
 
 // Load config from config/config.yaml
