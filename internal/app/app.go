@@ -2,7 +2,9 @@ package app
 
 import (
 	"chat-gateway/internal/config"
+	"chat-gateway/internal/repository"
 	httpserver "chat-gateway/internal/server/http"
+	"chat-gateway/internal/service"
 	router "chat-gateway/internal/transport/http"
 	v1 "chat-gateway/internal/transport/http/v1"
 	"context"
@@ -14,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"chat-gateway/pkg/database"
 	logs "chat-gateway/pkg/logger"
 
 	"github.com/sirupsen/logrus"
@@ -51,7 +54,19 @@ func Run() {
 		}
 	}()
 
-	v1Handler := v1.NewHandler()
+	db, err := database.NewPostgreSQL(&config.Database)
+	if err != nil {
+		logger.Errorf("database error: %v", err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.Errorf("database error: %v", err)
+		}
+	}()
+
+	repository := repository.NewRepository(db)
+	messenger := service.NewService(repository)
+	v1Handler := v1.NewHandler(messenger)
 	router := router.NewRouter(logger, &config.CORS)
 	v1.NewRouter(router, v1Handler)
 
