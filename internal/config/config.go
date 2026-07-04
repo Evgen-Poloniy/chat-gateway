@@ -57,12 +57,16 @@ type CORSConfig struct {
 
 // Database config from env and config.yaml
 type DatabaseConfig struct {
-	Host     string `env:"DB_HOST" env-required:"true"`
-	Port     string `env:"DB_PORT" env-required:"true"`
-	Username string `env:"DB_USER" env-required:"true"`
-	Password string `env:"DB_PASSWORD" env-required:"true"`
-	DBName   string `env:"DB_NAME" env-required:"true"`
-	SSLMode  string `env:"SSL_MODE" env-required:"true" validate:"oneof=disable require"`
+	Host                string        `env:"DB_HOST" env-required:"true"`
+	Port                string        `env:"DB_PORT" env-required:"true"`
+	Username            string        `env:"DB_USER" env-required:"true"`
+	Password            string        `env:"DB_PASSWORD" env-required:"true"`
+	DBName              string        `env:"DB_NAME" env-required:"true"`
+	SSLMode             string        `env:"SSL_MODE" env-required:"true" validate:"oneof=disable require"`
+	MaxOpenConns        int           `yaml:"max_open_conns"`
+	MaxIdleConns        int           `yaml:"max_idle_conns"`
+	ConnMaxLifetime     time.Duration `yaml:"conn_max_lifetime"`
+	ConnMaxIdleLifetime time.Duration `yaml:"conn_max_idle_lifetime"`
 }
 
 // Dataclass with all configs
@@ -70,7 +74,7 @@ type Config struct {
 	Server   ServerConfig   `yaml:"server"`
 	Logger   LoggerConfig   `yaml:"logger"`
 	CORS     CORSConfig     `yaml:"cors"`
-	Database DatabaseConfig `yaml:"-"`
+	Database DatabaseConfig `yaml:"database"`
 }
 
 // Load config from config/config.yaml
