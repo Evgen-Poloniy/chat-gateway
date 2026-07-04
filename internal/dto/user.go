@@ -11,6 +11,7 @@ type RegisterUser struct {
 	FirstName *string    `json:"first_name,omitempty"`
 	LastName  *string    `json:"last_name,omitempty"`
 	BirthDate *time.Time `json:"birth_date,omitempty"`
+	Gender    *string    `json:"gender,omitempty"`
 }
 
 // UserInfo represents request with data about user.
@@ -21,4 +22,5 @@ type UserData struct {
 	FirstName *string    `json:"first_name,omitempty"`
 	LastName  *string    `json:"last_name,omitempty"`
 	BirthDate *time.Time `json:"birth_date,omitempty"`
+	Gender    *string    `json:"gender,omitempty"`
 }

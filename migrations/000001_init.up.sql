@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
     first_name VARCHAR(100) DEFAULT NULL,
     last_name VARCHAR(100) DEFAULT NULL,
     birth_date DATE DEFAULT NULL,
+    gender VARCHAR(5) CHECK(gender IN ('man', 'woman')) DEFAULT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

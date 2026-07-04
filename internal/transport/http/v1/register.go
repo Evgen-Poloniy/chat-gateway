@@ -27,6 +27,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		BirthDate: req.BirthDate,
+		Gender:    req.Gender,
 	}
 
 	if err := h.messenger.CreateUser(c.Request.Context(), user); err != nil {
@@ -40,10 +41,11 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	userData := &dto.UserData{
 		UserID:    user.ID,
 		Username:  user.Username,
-		Email:     req.Email,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		BirthDate: req.BirthDate,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		BirthDate: user.BirthDate,
+		Gender:    user.Gender,
 	}
 
 	c.JSON(http.StatusCreated, userData)

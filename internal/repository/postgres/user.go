@@ -24,8 +24,8 @@ func (p *PostgresRepository) GetUserIdByUsername(ctx context.Context, username s
 // CreateUser allows create user into messenger database.
 func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) error {
 	query := `
-		INSERT INTO users (username, email, first_name, last_name, birth_date)
-		VALUES (:username, :email, :first_name, :last_name, :birth_date)
+		INSERT INTO users (username, email, first_name, last_name, birth_date, gender)
+		VALUES (:username, :email, :first_name, :last_name, :birth_date, :gender)
 		RETURNING id, created_at
 	`
 
