@@ -4,11 +4,11 @@ import "chat-gateway/internal/repository"
 
 // MessengerService represents implementation of messenger interface
 type MessengerService struct {
-	repository repository.MessengerRepository
+	messenger repository.MessengerRepository
 }
 
-func NewMessengerService(repository repository.MessengerRepository) *MessengerService {
+func NewMessengerService(messenger repository.MessengerRepository) *MessengerService {
 	return &MessengerService{
-		repository: repository,
+		messenger: messenger,
 	}
 }

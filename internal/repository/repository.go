@@ -14,7 +14,7 @@ type MessengerRepository interface {
 	GetUserIdByUsername(ctx context.Context, username string) (int64, error)
 
 	// CreateUser allows create user into messenger database and get unique used_id
-	CreateUser(ctx context.Context, user *entity.User) (int64, error)
+	CreateUser(ctx context.Context, user *entity.User) error
 }
 
 type Repository struct {
