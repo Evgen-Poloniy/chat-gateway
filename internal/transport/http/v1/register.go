@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RegisterUser register user by username and details about user.
 func (h *Handler) RegisterUser(c *gin.Context) {
 	var req dto.RegisterUser
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -22,14 +23,13 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 
 	user := &entity.User{
 		Username:  req.Username,
-		Email:     &req.Email,
-		FirstName: &req.FirstName,
-		LastName:  &req.LastName,
-		BirthDate: &req.BirthDate,
+		Email:     req.Email,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		BirthDate: req.BirthDate,
 	}
 
-	userID, err := h.messenger.CreateUser(c.Request.Context(), user)
-	if err != nil {
+	if err := h.messenger.CreateUser(c.Request.Context(), user); err != nil {
 		c.Error(&errs.AppError{
 			StatusCode: http.StatusInternalServerError,
 			Code:       "INTERNAL_SERVER_ERROR",
@@ -38,7 +38,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	}
 
 	userData := &dto.UserData{
-		ID:        userID,
+		UserID:    user.ID,
 		Username:  user.Username,
 		Email:     req.Email,
 		FirstName: req.FirstName,

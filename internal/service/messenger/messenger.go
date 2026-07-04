@@ -2,7 +2,7 @@ package messenger
 
 import "chat-gateway/internal/repository"
 
-// MessengerService represents implementation of messenger interface
+// MessengerService represents implementation of messenger interface.
 type MessengerService struct {
 	messenger repository.MessengerRepository
 }

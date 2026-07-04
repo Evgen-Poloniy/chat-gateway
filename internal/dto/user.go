@@ -1,22 +1,24 @@
 package dto
 
-import "time"
+import (
+	"time"
+)
 
-// RegisterUser represents DTO for register new user info messenger
+// RegisterUser represents DTO for register new user info messenger.
 type RegisterUser struct {
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	FirstName string    `json:"first_name"`
-	LastName  string    `json:"last_name"`
-	BirthDate time.Time `json:"birth_date"`
+	Username  string     `json:"username"`
+	Email     *string    `json:"email,omitempty"`
+	FirstName *string    `json:"first_name,omitempty"`
+	LastName  *string    `json:"last_name,omitempty"`
+	BirthDate *time.Time `json:"birth_date,omitempty"`
 }
 
-// UserInfo represents request with data about user
+// UserInfo represents request with data about user.
 type UserData struct {
-	ID        int64     `json:"user_id"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	FirstName string    `json:"first_name"`
-	LastName  string    `json:"last_name"`
-	BirthDate time.Time `json:"birth_date"`
+	UserID    int64      `json:"user_id"`
+	Username  string     `json:"username,omitempty"`
+	Email     *string    `json:"email,omitempty"`
+	FirstName *string    `json:"first_name,omitempty"`
+	LastName  *string    `json:"last_name,omitempty"`
+	BirthDate *time.Time `json:"birth_date,omitempty"`
 }

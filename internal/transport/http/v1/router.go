@@ -7,6 +7,6 @@ import (
 func NewRouter(router *gin.Engine, handler *Handler) {
 	v1 := router.Group("/api/v1")
 	{
-		v1.GET("/", nil)
+		v1.POST("/register", handler.RegisterUser)
 	}
 }

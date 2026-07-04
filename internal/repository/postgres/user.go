@@ -8,7 +8,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// GetUserIdByUsername allows get username from messenger database and get unique used_id
+// GetUserIdByUsername allows get username from messenger database and get unique used_id.
 func (p *PostgresRepository) GetUserIdByUsername(ctx context.Context, username string) (int64, error) {
 	query := "SELECT id FROM users WHERE username LIKE '$1'"
 
@@ -21,36 +21,32 @@ func (p *PostgresRepository) GetUserIdByUsername(ctx context.Context, username s
 	return user_id, nil
 }
 
-// CreateUser allows create user into messenger database and get unique used_id
-func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) (int64, error) {
+// CreateUser allows create user into messenger database.
+func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) error {
 	query := `
 		INSERT INTO users (username, email, first_name, last_name, birth_date)
 		VALUES (:username, :email, :first_name, :last_name, :birth_date)
-		RETURNING id
+		RETURNING id, created_at
 	`
 
 	rows, err := p.db.NamedQueryContext(ctx, query, user)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	defer rows.Close()
 
 	if rows.Next() {
-		var id int64
-
-		err = rows.Scan(&id)
+		err = rows.Scan(&user.ID, &user.CreatedAt)
 		if err != nil {
-			return 0, err
+			return err
 		}
 
-		user.ID = id
-
-		return id, nil
+		return nil
 	}
 
 	if err = rows.Err(); err != nil {
-		return 0, err
+		return err
 	}
 
-	return 0, errs.ErrRecordNotFound
+	return errs.ErrRecordNotFound
 }

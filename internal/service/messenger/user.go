@@ -5,7 +5,7 @@ import (
 	"context"
 )
 
-// CreateUser allows create user into messenger by template
-func (m *MessengerService) CreateUser(ctx context.Context, user *entity.User) (int64, error) {
+// CreateUser allows create user into messenger by template.
+func (m *MessengerService) CreateUser(ctx context.Context, user *entity.User) error {
 	return m.messenger.CreateUser(ctx, user)
 }

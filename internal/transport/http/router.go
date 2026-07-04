@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// NewRouter initializes HTTP API router and connects middlewares on target routers.
 func NewRouter(logger *logrus.Logger, config *config.CORSConfig) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
@@ -64,6 +65,8 @@ func NewRouter(logger *logrus.Logger, config *config.CORSConfig) *gin.Engine {
 	return router
 }
 
+// logAndResponseJSON is used in endpoints for logging and request request errors:
+// URL not found and method not allowed.
 func logAndResponseJSON(c *gin.Context, logger *logrus.Logger, statusCode int, code string, message string) {
 	id := uuid.New().String()
 
