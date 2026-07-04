@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS chats (
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     owner_id BIGINT DEFAULT NULL REFERENCES users(id) ON DELETE SET NULL
+    type VARCHAR(16) NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS chats_owner_id_idx ON chats(owner_id);
