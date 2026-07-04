@@ -17,3 +17,8 @@ func (e *AppError) Error() string {
 var (
 	ErrRecordNotFound = errors.New("record not found")
 )
+
+// Service errors
+var (
+	ErrChatAlreadyExists = errors.New("chat already exists")
+)
