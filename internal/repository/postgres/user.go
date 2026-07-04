@@ -22,7 +22,7 @@ func (p *PostgresRepository) GetUserIdByUsername(ctx context.Context, username s
 }
 
 // CreateUser allows create user into messenger database and get unique used_id
-func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) error {
+func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) (int64, error) {
 	query := `
 		INSERT INTO users (username, email, first_name, last_name, birth_date)
 		VALUES (:username, :email, :first_name, :last_name, :birth_date)
@@ -31,20 +31,26 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) 
 
 	rows, err := p.db.NamedQueryContext(ctx, query, user)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer rows.Close()
 
 	if rows.Next() {
-		err = rows.StructScan(user)
+		var id int64
+
+		err = rows.Scan(&id)
 		if err != nil {
-			return err
+			return 0, err
 		}
+
+		user.ID = id
+
+		return id, nil
 	}
 
 	if err = rows.Err(); err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return 0, errs.ErrRecordNotFound
 }
