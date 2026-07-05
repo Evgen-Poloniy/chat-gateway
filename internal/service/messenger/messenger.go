@@ -17,13 +17,19 @@ type MessengerRepository interface {
 	CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error
 }
 
-// MessengerService represents implementation of messenger interface.
-type MessengerService struct {
-	messenger MessengerRepository
+// MessageBroker represents interface for work with the messenger broker
+type MessageBroker interface {
 }
 
-func NewMessengerService(messenger MessengerRepository) *MessengerService {
+// MessengerService represents implementation of messenger interface.
+type MessengerService struct {
+	messengerRepository MessengerRepository
+	messageBroker       MessageBroker
+}
+
+func NewMessengerService(messengerRepository MessengerRepository, messageBroker MessageBroker) *MessengerService {
 	return &MessengerService{
-		messenger: messenger,
+		messengerRepository: messengerRepository,
+		messageBroker:       messageBroker,
 	}
 }

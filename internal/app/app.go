@@ -2,6 +2,7 @@ package app
 
 import (
 	"chat-gateway/internal/config"
+	kf "chat-gateway/internal/repository/kafka"
 	pg "chat-gateway/internal/repository/postgres"
 	httpserver "chat-gateway/internal/server/http"
 	"chat-gateway/internal/service/messenger"
@@ -64,8 +65,22 @@ func Run() {
 		}
 	}()
 
-	messengerDatabase := pg.NewPostgresRepository(db)
-	messenger := messenger.NewMessengerService(messengerDatabase)
+	p, err := database.NewKafkaProducer(&config.MessageBroker, logger)
+	if err != nil {
+		logger.Errorf("message broker error: %v", err)
+	}
+	defer func() {
+		unflushedCount := p.Flush(config.MessageBroker.FlashTimeout * 1000)
+		if unflushedCount > 0 {
+			logger.Warnf("warning: %d messages were not flushed and might be lost", unflushedCount)
+		}
+
+		p.Close()
+	}()
+
+	messengerRepository := pg.NewPostgresRepository(db)
+	messageBroker := kf.NewKafkaRepository(p)
+	messenger := messenger.NewMessengerService(messengerRepository, messageBroker)
 	v1Handler := v1.NewHandler(messenger)
 	router := router.NewRouter(logger, &config.CORS)
 	v1.NewRouter(router, v1Handler)

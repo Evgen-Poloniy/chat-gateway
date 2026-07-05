@@ -72,3 +72,6 @@ message-broker:
 
     # Max time (ms) a message can spend in the queue before failing.
     message.timeout.ms: 30000
+
+    # Timeout for flush messages into broker (s)
+    flash_timeout: 15

@@ -72,8 +72,8 @@ type DatabaseConfig struct {
 // Message broker config from env and config.yaml.
 type MessageBrokerConfig struct {
 	BootstrapServers           string `env:"KAFKA_BOOTSTRAP_SERVERS" env-required:"true"`
-	User                       string `env:"KAFKA_USER"`
-	Password                   string `env:"KAFKA_PASSWORD"`
+	User                       string `env:"KAFKA_USER" env-required:"true"`
+	Password                   string `env:"KAFKA_PASSWORD" env-required:"true"`
 	SASLMechanism              string `env:"KAFKA_SASL_MECHANISM" validate:"oneof=PLAIN SCRAM-SHA-256 SCRAM-SHA-512"`
 	SecurityProtocol           string `env:"KAFKA_SECURITY_PROTOCOL" validate:"oneof=PLAINTEXT SASL_PLAINTEXT SASL_SSL SSL"`
 	Acks                       string `yaml:"acks"`
@@ -85,6 +85,7 @@ type MessageBrokerConfig struct {
 	CompressionType            string `yaml:"compression_type" validate:"oneof=none gzip snpappy lz4 zstd"`
 	QueueBufferingMaxMessages  int    `yaml:"queue_buffering_max_messages"`
 	MessageTimeout             int    `yaml:"message_timeout"`
+	FlashTimeout               int    `yaml:"flash_timeout"`
 }
 
 // Dataclass with all configs.

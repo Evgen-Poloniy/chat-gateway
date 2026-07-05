@@ -7,5 +7,5 @@ import (
 
 // CreateUser allows create user into messenger by template.
 func (m *MessengerService) CreateUser(ctx context.Context, user *entity.User) error {
-	return m.messenger.CreateUser(ctx, user)
+	return m.messengerRepository.CreateUser(ctx, user)
 }

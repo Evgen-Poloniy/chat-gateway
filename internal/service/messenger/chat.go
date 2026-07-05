@@ -7,5 +7,5 @@ import (
 
 // CreateChat accept user IDs and create direct chat.
 func (m *MessengerService) CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error {
-	return m.messenger.CreateDirectChat(ctx, chat)
+	return m.messengerRepository.CreateDirectChat(ctx, chat)
 }
