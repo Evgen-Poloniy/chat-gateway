@@ -9,7 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// NewPostgreSQL opens connection with the database
+// NewPostgreSQL opens connection with the database.
 func NewPostgreSQL(config *config.DatabaseConfig) (*sqlx.DB, error) {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		config.Host, config.Port, config.Username, config.Password, config.DBName, config.SSLMode,

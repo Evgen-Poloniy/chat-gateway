@@ -7,7 +7,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-// Acceptable logger levels
+// Acceptable logger levels.
 const (
 	TraceLevel = "trace"
 	DebugLevel = "debug"
@@ -18,7 +18,7 @@ const (
 	FatalLevel = "fatal"
 )
 
-// Acceptable logger formats
+// Acceptable logger formats.
 const (
 	TextFormat = "text"
 	JsonFormat = "json"
@@ -26,7 +26,7 @@ const (
 	Stderr     = "stderr"
 )
 
-// Config with tags from cleanenv library
+// Config with tags from cleanenv library.
 type ServerConfig struct {
 	Host                    string        `env:"API_HOST" env-required:"true"`
 	Port                    string        `env:"API_PORT" env-required:"true"`
@@ -38,7 +38,7 @@ type ServerConfig struct {
 	IdleTimeout             time.Duration `yaml:"idle_timeout" env-default:"60s"`
 }
 
-// Logger config from config.yaml
+// Logger config from config.yaml.
 type LoggerConfig struct {
 	Level  string   `yaml:"level" env-default:"info" validate:"oneof=trace debug info warn error panic fatal"`
 	Format string   `yaml:"format" env-default:"json" validate:"oneof=text json"`
@@ -46,7 +46,7 @@ type LoggerConfig struct {
 	Files  []string `yaml:"files"`
 }
 
-// CORSConfig is the config for CORS policy
+// CORSConfig is the config for CORS policy.
 type CORSConfig struct {
 	AllowedOrigin    string        `yaml:"allowed_origin"`
 	AllowCredentials bool          `yaml:"allow_credentials"`
@@ -55,7 +55,7 @@ type CORSConfig struct {
 	MaxAge           time.Duration `yaml:"max_age" validate:"required,gte=1m,lte=24h"`
 }
 
-// Database config from env and config.yaml
+// Database config from env and config.yaml.
 type DatabaseConfig struct {
 	Host                string        `env:"DB_HOST" env-required:"true"`
 	Port                string        `env:"DB_PORT" env-required:"true"`
@@ -69,7 +69,7 @@ type DatabaseConfig struct {
 	ConnMaxIdleLifetime time.Duration `yaml:"conn_max_idle_lifetime"`
 }
 
-// Message broker config from env and config.yaml
+// Message broker config from env and config.yaml.
 type MessageBrokerConfig struct {
 	BootstrapServers           string `env:"KAFKA_BOOTSTRAP_SERVERS" env-required:"true"`
 	User                       string `env:"KAFKA_USER"`
@@ -87,7 +87,7 @@ type MessageBrokerConfig struct {
 	MessageTimeout             int    `yaml:"message_timeout"`
 }
 
-// Dataclass with all configs
+// Dataclass with all configs.
 type Config struct {
 	Server        ServerConfig        `yaml:"server"`
 	Logger        LoggerConfig        `yaml:"logger"`
@@ -96,7 +96,7 @@ type Config struct {
 	MessageBroker MessageBrokerConfig `yaml:"message-broker"`
 }
 
-// Load config from config/config.yaml
+// Load config from config/config.yaml.
 func LoadConfig(path string) (Config, error) {
 	var config Config
 	if err := cleanenv.ReadConfig(path, &config); err != nil {

@@ -15,7 +15,7 @@ var _files []*os.File
 func NewLogrusLogger(cfg *config.LoggerConfig) (*logrus.Logger, error) {
 	l := logrus.New()
 
-	// Set logger format
+	// Set logger format.
 	switch cfg.Format {
 	case config.TextFormat:
 		l.SetFormatter(&logrus.TextFormatter{
@@ -27,7 +27,7 @@ func NewLogrusLogger(cfg *config.LoggerConfig) (*logrus.Logger, error) {
 		})
 	}
 
-	// Set logger level
+	// Set logger level.
 	switch cfg.Level {
 	case config.TraceLevel:
 		l.SetLevel(logrus.TraceLevel)
@@ -47,7 +47,7 @@ func NewLogrusLogger(cfg *config.LoggerConfig) (*logrus.Logger, error) {
 		l.SetLevel(logrus.InfoLevel)
 	}
 
-	// Set logger on output stream (Stdout, Stderr, Files)
+	// Set logger on output stream (Stdout, Stderr, Files).
 	writers := make([]io.Writer, 0, len(cfg.Files))
 	_files = make([]*os.File, 0, len(cfg.Files))
 
@@ -74,7 +74,7 @@ func NewLogrusLogger(cfg *config.LoggerConfig) (*logrus.Logger, error) {
 	return l, nil
 }
 
-// Closing logger for graceful shutdown
+// Closing logger for graceful shutdown.
 func Close() error {
 	errs := make([]error, 0, len(_files))
 
