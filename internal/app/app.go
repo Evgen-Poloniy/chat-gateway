@@ -2,9 +2,9 @@ package app
 
 import (
 	"chat-gateway/internal/config"
-	"chat-gateway/internal/repository"
+	"chat-gateway/internal/repository/postgres"
 	httpserver "chat-gateway/internal/server/http"
-	"chat-gateway/internal/service"
+	"chat-gateway/internal/service/messenger"
 	router "chat-gateway/internal/transport/http"
 	v1 "chat-gateway/internal/transport/http/v1"
 	"context"
@@ -64,8 +64,8 @@ func Run() {
 		}
 	}()
 
-	repository := repository.NewRepository(db)
-	messenger := service.NewService(repository)
+	postgres := postgres.NewPostgresRepository(db)
+	messenger := messenger.NewMessengerService(postgres)
 	v1Handler := v1.NewHandler(messenger)
 	router := router.NewRouter(logger, &config.CORS)
 	v1.NewRouter(router, v1Handler)
