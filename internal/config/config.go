@@ -69,12 +69,31 @@ type DatabaseConfig struct {
 	ConnMaxIdleLifetime time.Duration `yaml:"conn_max_idle_lifetime"`
 }
 
+// Message broker config from env and config.yaml
+type MessageBrokerConfig struct {
+	BootstrapServers           string `env:"KAFKA_BOOTSTRAP_SERVERS" env-required:"true"`
+	User                       string `env:"KAFKA_USER"`
+	Password                   string `env:"KAFKA_PASSWORD"`
+	SASLMechanism              string `env:"KAFKA_SASL_MECHANISM" validate:"oneof=PLAIN SCRAM-SHA-256 SCRAM-SHA-512"`
+	SecurityProtocol           string `env:"KAFKA_SECURITY_PROTOCOL" validate:"oneof=PLAINTEXT SASL_PLAINTEXT SASL_SSL SSL"`
+	Acks                       string `yaml:"acks"`
+	EnableIdempotence          bool   `yaml:"enable_idempotence"`
+	Retries                    int    `yaml:"retries"`
+	MaxInFlightRequestsPerConn int    `yaml:"max_in_flight_requests_per_connection"`
+	LingerMs                   int    `yaml:"linger_ms"`
+	BatchNumMessages           int    `yaml:"batch_num_messages"`
+	CompressionType            string `yaml:"compression_type" validate:"oneof=none gzip snpappy lz4 zstd"`
+	QueueBufferingMaxMessages  int    `yaml:"queue_buffering_max_messages"`
+	MessageTimeout             int    `yaml:"message_timeout"`
+}
+
 // Dataclass with all configs
 type Config struct {
-	Server   ServerConfig   `yaml:"server"`
-	Logger   LoggerConfig   `yaml:"logger"`
-	CORS     CORSConfig     `yaml:"cors"`
-	Database DatabaseConfig `yaml:"database"`
+	Server        ServerConfig        `yaml:"server"`
+	Logger        LoggerConfig        `yaml:"logger"`
+	CORS          CORSConfig          `yaml:"cors"`
+	Database      DatabaseConfig      `yaml:"database"`
+	MessageBroker MessageBrokerConfig `yaml:"message-broker"`
 }
 
 // Load config from config/config.yaml
