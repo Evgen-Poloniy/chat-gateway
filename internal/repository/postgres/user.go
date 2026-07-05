@@ -1,4 +1,4 @@
-package postgres
+package pg
 
 import (
 	"chat-gateway/internal/entity"
