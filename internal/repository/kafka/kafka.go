@@ -6,11 +6,11 @@ import (
 
 // PostgresRepository represents implementation of interface MessengerRepository
 type KafkaRepository struct {
-	p *kafka.Producer
+	producer *kafka.Producer
 }
 
-func NewKafkaRepository(p *kafka.Producer) *KafkaRepository {
+func NewKafkaRepository(producer *kafka.Producer) *KafkaRepository {
 	return &KafkaRepository{
-		p: p,
+		producer: producer,
 	}
 }

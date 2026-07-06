@@ -66,21 +66,21 @@ func Run() {
 		}
 	}()
 
-	p, err := database.NewKafkaProducer(&config.MessageBroker, logger)
+	producer, err := database.NewKafkaProducer(&config.MessageBroker, logger)
 	if err != nil {
 		logger.Errorf("message broker error: %v", err)
 	}
 	defer func() {
-		unflushedCount := p.Flush(config.MessageBroker.FlashTimeout * 1000)
+		unflushedCount := producer.Flush(config.MessageBroker.FlashTimeout * 1000)
 		if unflushedCount > 0 {
 			logger.Warnf("warning: %d messages were not flushed and might be lost", unflushedCount)
 		}
 
-		p.Close()
+		producer.Close()
 	}()
 
 	messengerRepository := pg.NewPostgresRepository(db)
-	messageBroker := kf.NewKafkaRepository(p)
+	messageBroker := kf.NewKafkaRepository(producer)
 	messenger := messenger.NewMessengerService(messengerRepository, messageBroker)
 	router := router.NewRouter(logger, &config.CORS)
 	v1Handler := v1.NewHandler(messenger)
