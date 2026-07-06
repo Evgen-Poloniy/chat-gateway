@@ -12,7 +12,7 @@ import (
 
 // RegisterUser register user by username and details about user.
 func (h *Handler) RegisterUser(c *gin.Context) {
-	var req dto.RegisterUser
+	var req dto.RegisterUserReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
@@ -36,7 +36,46 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		c.Error(err)
 	}
 
-	resp := &dto.UserData{
+	resp := &dto.UserDataResp{
+		UserID:    user.UserID,
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		BirthDate: user.BirthDate,
+		Gender:    user.Gender,
+	}
+
+	c.JSON(http.StatusCreated, resp)
+}
+
+// RegisterUser register user by username and details about user.
+func (h *Handler) UpdateUser(c *gin.Context) {
+	var req dto.RegisterUserReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "BAD_REQUEST",
+			Message:    err.Error(),
+			Err:        err,
+		})
+		return
+	}
+
+	user := &entity.User{
+		Username:  req.Username,
+		Email:     req.Email,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		BirthDate: req.BirthDate,
+		Gender:    req.Gender,
+	}
+
+	if err := h.messenger.CreateUser(c.Request.Context(), user); err != nil {
+		c.Error(err)
+	}
+
+	resp := &dto.UserDataResp{
 		UserID:    user.UserID,
 		Username:  user.Username,
 		Email:     user.Email,
@@ -68,7 +107,7 @@ func (h *Handler) GetUserDataByUsername(c *gin.Context) {
 		return
 	}
 
-	resp := &dto.UserData{
+	resp := &dto.UserDataResp{
 		UserID:    user.UserID,
 		Username:  user.Username,
 		Email:     user.Email,

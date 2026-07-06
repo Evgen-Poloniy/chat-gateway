@@ -4,8 +4,8 @@ import (
 	"time"
 )
 
-// RegisterUser represents DTO for register new user info messenger.
-type RegisterUser struct {
+// RegisterUser represents DTO for register new user data into messenger.
+type RegisterUserReq struct {
 	Username  string     `json:"username"`
 	Email     *string    `json:"email,omitempty"`
 	FirstName *string    `json:"first_name,omitempty"`
@@ -15,7 +15,7 @@ type RegisterUser struct {
 }
 
 // UserInfo represents request with data about user.
-type UserData struct {
+type UserDataResp struct {
 	UserID    int64      `json:"user_id"`
 	Username  string     `json:"username,omitempty"`
 	Email     *string    `json:"email,omitempty"`
