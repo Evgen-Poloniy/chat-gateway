@@ -5,7 +5,12 @@ import (
 	"context"
 )
 
-// CreateChat accept user IDs and create direct chat.
+// CreateDirectChat accept user IDs and create direct chat.
 func (m *MessengerService) CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error {
 	return m.messengerRepository.CreateDirectChat(ctx, chat)
+}
+
+// CreateGroupChat accept user IDs, chat name, chat owner user_id and create group chat between several users.
+func (m *MessengerService) CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error {
+	return m.messengerRepository.CreateGroupChat(ctx, chat)
 }

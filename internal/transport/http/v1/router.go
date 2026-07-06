@@ -9,5 +9,6 @@ func NewRouter(router *gin.Engine, handler *Handler) {
 	{
 		v1.POST("/register", handler.RegisterUser)
 		v1.POST("/create/chat/direct", handler.CreateDirectChat)
+		v1.POST("/create/chat/group", handler.CreateGroupChat)
 	}
 }

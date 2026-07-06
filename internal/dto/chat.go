@@ -6,7 +6,8 @@ import (
 
 // CreateGroupChat represents DTO for creating group chat.
 type CreateGroupChat struct {
-	ParticipantIDs []int64 `json:"participant_ids" binding:"required"`
+	ParticipantIDs []int64 `json:"participant_ids" binding:"required,min=2"`
+	Name           string  `json:"name" binding:"required"`
 	Title          *string `json:"title,omitempty"`
 	Description    *string `json:"description,omitempty"`
 	OwnerID        int64   `json:"owner_id" binding:"required"`
@@ -26,11 +27,12 @@ type DirectChatData struct {
 
 // GroupChatData represents DTO for group chat response data.
 type GroupChatData struct {
-	ID          int64     `json:"id"`
-	Type        string    `json:"type"`
-	Name        string    `json:"name"`
-	Title       *string   `json:"title,omitempty"`
-	Description *string   `json:"description,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	OwnerID     int64     `json:"owner_id"`
+	ChatID         int64     `json:"chat_id"`
+	ParticipantIDs []int64   `json:"participant_ids"`
+	Type           string    `json:"type"`
+	Name           string    `json:"name"`
+	Title          *string   `json:"title,omitempty"`
+	Description    *string   `json:"description,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
+	OwnerID        int64     `json:"owner_id"`
 }

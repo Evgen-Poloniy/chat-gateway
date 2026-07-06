@@ -10,8 +10,11 @@ type MessengerService interface {
 	// CreateUser allows create user into messenger by template.
 	CreateUser(ctx context.Context, user *entity.User) error
 
-	// CreateChat accept user IDs and create direct chat.
+	// CreateDirectChat accept user IDs and create direct chat between two users.
 	CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error
+
+	// CreateGroupChat accept user IDs, chat name, chat owner user_id and create group chat between several users.
+	CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error
 }
 
 type Handler struct {
