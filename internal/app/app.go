@@ -81,8 +81,8 @@ func Run() {
 	messengerRepository := pg.NewPostgresRepository(db)
 	messageBroker := kf.NewKafkaRepository(p)
 	messenger := messenger.NewMessengerService(messengerRepository, messageBroker)
-	v1Handler := v1.NewHandler(messenger)
 	router := router.NewRouter(logger, &config.CORS)
+	v1Handler := v1.NewHandler(messenger)
 	v1.NewRouter(router, v1Handler)
 
 	var wg sync.WaitGroup

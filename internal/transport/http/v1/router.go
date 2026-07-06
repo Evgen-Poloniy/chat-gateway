@@ -6,9 +6,18 @@ import (
 
 func NewRouter(router *gin.Engine, handler *Handler) {
 	v1 := router.Group("/api/v1")
+
+	auth := v1.Group("/auth")
 	{
-		v1.POST("/register", handler.RegisterUser)
-		v1.POST("/create/chat/direct", handler.CreateDirectChat)
-		v1.POST("/create/chat/group", handler.CreateGroupChat)
+		auth.POST("/register", handler.RegisterUser)
+	}
+
+	protected := v1.Group("")
+	{
+		chats := protected.Group("/chats")
+		{
+			chats.POST("/create/direct", handler.CreateDirectChat)
+			chats.POST("/create/group", handler.CreateGroupChat)
+		}
 	}
 }
