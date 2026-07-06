@@ -2,6 +2,9 @@ package pg
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
@@ -9,17 +12,23 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// GetUserIdByUsername allows get username from messenger database and get unique used_id.
-func (p *PostgresRepository) GetUserIdByUsername(ctx context.Context, username string) (int64, error) {
-	query := "SELECT id FROM users WHERE username LIKE '$1'"
+// GetUserDataByUsername gets all data about user from the messenger database.
+func (p *PostgresRepository) GetUserDataByUsername(ctx context.Context, username string) (*entity.User, error) {
+	query := `
+        SELECT id, username, email, first_name, last_name, birth_date, created_at, gender
+        FROM users
+        WHERE username = $1`
 
-	var user_id int64
+	var user entity.User
 
-	if err := p.db.GetContext(ctx, &user_id, query, username); err != nil {
-		return 0, errs.ErrRecordNotFound
+	if err := p.db.GetContext(ctx, &user, query); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user with username '%s' not found: %w", username, errs.ErrRecordNotFound)
+		}
+		return nil, err
 	}
 
-	return user_id, nil
+	return &user, nil
 }
 
 // CreateUser allows create user into messenger database.

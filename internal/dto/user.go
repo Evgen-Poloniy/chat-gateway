@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+// GetUserData represents DTO for get user data.
+type GetUserData struct {
+	Username string `json:"username"`
+}
+
 // RegisterUser represents DTO for register new user info messenger.
 type RegisterUser struct {
 	Username  string     `json:"username"`

@@ -11,6 +11,9 @@ type MessengerService interface {
 	// CreateUser allows create user into messenger by template.
 	CreateUser(ctx context.Context, user *entity.User) error
 
+	// GetUserDataByUsername gets all data about user from the messenger database.
+	GetUserDataByUsername(ctx context.Context, username string) (*entity.User, error)
+
 	// CreateDirectChat accept user IDs and create direct chat between two users.
 	CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error
 

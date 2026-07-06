@@ -39,7 +39,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		})
 	}
 
-	userData := &dto.UserData{
+	resp := &dto.UserData{
 		UserID:    user.UserID,
 		Username:  user.Username,
 		Email:     user.Email,
@@ -49,5 +49,36 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		Gender:    user.Gender,
 	}
 
-	c.JSON(http.StatusCreated, userData)
+	c.JSON(http.StatusCreated, resp)
+}
+
+// GetUserDataByUsername gets all data about user from the messenger database.
+func (h *Handler) GetUserDataByUsername(c *gin.Context) {
+	var req dto.GetUserData
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(&errs.AppError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "BAD_REQUEST",
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	user, err := h.messenger.GetUserDataByUsername(c.Request.Context(), req.Username)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	resp := &dto.UserData{
+		UserID:    user.UserID,
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		BirthDate: user.BirthDate,
+		Gender:    user.Gender,
+	}
+
+	c.JSON(http.StatusOK, resp)
 }

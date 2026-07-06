@@ -47,6 +47,9 @@ func ErrorHandler() gin.HandlerFunc {
 		} else if c.Writer.Status() == http.StatusMethodNotAllowed {
 			statusCode = http.StatusMethodNotAllowed
 			code = "METHOD_NOT_ALLOWED"
+		} else if errors.Is(err, errs.ErrRecordNotFound) {
+			statusCode = http.StatusBadRequest
+			code = "RECORD_NOT_FOUND"
 		} else {
 			statusCode = http.StatusInternalServerError
 			code = "UNKNOWN_ERROR"
