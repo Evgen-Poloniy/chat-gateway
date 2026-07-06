@@ -90,7 +90,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 
 // GetUserDataByUsername gets all data about user from the messenger database.
 func (h *Handler) GetUserDataByUsername(c *gin.Context) {
-	username := c.Query("username")
+	username := c.Param("id")
 	if username == "" {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
