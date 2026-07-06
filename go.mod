@@ -1,4 +1,4 @@
-module chat-gateway
+module github.com/Evgen-Poloniy/chat-gateway
 
 go 1.26.1
 

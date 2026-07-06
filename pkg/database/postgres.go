@@ -1,10 +1,11 @@
 package database
 
 import (
-	"chat-gateway/internal/config"
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 
 	"github.com/jmoiron/sqlx"
 )

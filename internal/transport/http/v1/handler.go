@@ -1,8 +1,9 @@
 package v1
 
 import (
-	"chat-gateway/internal/entity"
 	"context"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
 // MessengerService represents interface for work with messenger business logic.

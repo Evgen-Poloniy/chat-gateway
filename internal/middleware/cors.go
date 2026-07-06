@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"chat-gateway/internal/config"
 	"strconv"
 	"strings"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 
 	"github.com/gin-gonic/gin"
 )

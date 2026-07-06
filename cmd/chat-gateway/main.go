@@ -1,6 +1,6 @@
 package main
 
-import "chat-gateway/internal/app"
+import "github.com/Evgen-Poloniy/chat-gateway/internal/app"
 
 func main() {
 	app.Run()

@@ -1,8 +1,9 @@
 package messenger
 
 import (
-	"chat-gateway/internal/entity"
 	"context"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
 // CreateUser allows create user into messenger by template.

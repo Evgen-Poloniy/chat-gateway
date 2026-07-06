@@ -1,9 +1,10 @@
 package pg
 
 import (
-	"chat-gateway/internal/entity"
-	errs "chat-gateway/pkg/errors"
 	"context"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )

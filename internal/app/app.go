@@ -1,13 +1,6 @@
 package app
 
 import (
-	"chat-gateway/internal/config"
-	kf "chat-gateway/internal/repository/kafka"
-	pg "chat-gateway/internal/repository/postgres"
-	httpserver "chat-gateway/internal/server/http"
-	"chat-gateway/internal/service/messenger"
-	router "chat-gateway/internal/transport/http"
-	v1 "chat-gateway/internal/transport/http/v1"
 	"context"
 	"errors"
 	"net/http"
@@ -17,8 +10,16 @@ import (
 	"syscall"
 	"time"
 
-	"chat-gateway/pkg/database"
-	logs "chat-gateway/pkg/logger"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
+	kf "github.com/Evgen-Poloniy/chat-gateway/internal/repository/kafka"
+	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
+	httpserver "github.com/Evgen-Poloniy/chat-gateway/internal/server/http"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger"
+	router "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http"
+	v1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/v1"
+
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/database"
+	logs "github.com/Evgen-Poloniy/chat-gateway/pkg/logger"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"

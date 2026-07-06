@@ -1,10 +1,11 @@
 package pg
 
 import (
-	"chat-gateway/internal/entity"
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
 // CreateChat accept user IDs and create direct chat.

@@ -1,8 +1,9 @@
 package messenger
 
 import (
-	"chat-gateway/internal/entity"
 	"context"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
 // MessengerRepository represents interface for work with the messenger database.

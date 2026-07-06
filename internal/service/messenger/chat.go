@@ -1,8 +1,9 @@
 package messenger
 
 import (
-	"chat-gateway/internal/entity"
 	"context"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
 // CreateDirectChat accept user IDs and create direct chat.

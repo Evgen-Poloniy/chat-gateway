@@ -1,13 +1,14 @@
 package router
 
 import (
-	"chat-gateway/internal/config"
-	"chat-gateway/internal/dto"
-	"chat-gateway/internal/middleware"
-	"chat-gateway/internal/transport/ws"
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/middleware"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/ws"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

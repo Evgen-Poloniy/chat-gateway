@@ -1,8 +1,9 @@
 package database
 
 import (
-	"chat-gateway/internal/config"
 	"fmt"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/sirupsen/logrus"

@@ -1,10 +1,11 @@
 package v1
 
 import (
-	"chat-gateway/internal/dto"
-	"chat-gateway/internal/entity"
-	errs "chat-gateway/pkg/errors"
 	"net/http"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 
 	"github.com/gin-gonic/gin"
 )

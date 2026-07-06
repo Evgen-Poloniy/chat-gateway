@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"chat-gateway/internal/dto"
-	errs "chat-gateway/pkg/errors"
 	"errors"
 	"net/http"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
+	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 
 	"github.com/gin-gonic/gin"
 )

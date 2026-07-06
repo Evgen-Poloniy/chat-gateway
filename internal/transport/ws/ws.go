@@ -1,13 +1,14 @@
 package ws
 
 import (
-	"chat-gateway/internal/dto"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

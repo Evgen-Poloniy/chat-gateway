@@ -1,11 +1,12 @@
 package logger
 
 import (
-	"chat-gateway/internal/config"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 
 	"github.com/sirupsen/logrus"
 )

@@ -1,10 +1,11 @@
 package httpserver
 
 import (
-	"chat-gateway/internal/config"
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 )
 
 // Wrapper for http server
