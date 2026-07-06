@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 
+	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
@@ -14,11 +15,14 @@ type MessengerService interface {
 	// GetUserDataByUsername gets all data about user from the messenger database.
 	GetUserDataByUsername(ctx context.Context, username string) (*entity.User, error)
 
-	// CreateDirectChat accept user IDs and create direct chat between two users.
-	CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error
+	// CreateDirectChatReq accept user IDs and create direct chat between two users.
+	CreateDirectChatReq(ctx context.Context, chat *entity.DirectChat) error
 
-	// CreateGroupChat accept user IDs, chat name, chat owner user_id and create group chat between several users.
-	CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error
+	// CreateGroupChatReq accept user IDs, chat name, chat owner user_id and create group chat between several users.
+	CreateGroupChatReq(ctx context.Context, chat *entity.GroupChat) error
+
+	// SendMessage sends message into target chat.
+	SendMessage(message *dto.SendMessageReq) error
 }
 
 type Handler struct {

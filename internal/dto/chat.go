@@ -4,8 +4,14 @@ import (
 	"time"
 )
 
-// CreateGroupChat represents DTO for creating group chat.
-type CreateGroupChat struct {
+// CreateDirectChatReq represents DTO for creating direct chat.
+type CreateDirectChatReq struct {
+	SenderID    int64 `json:"sender_id" binding:"required"`
+	RecipientID int64 `json:"recipient_id" binding:"required"`
+}
+
+// CreateGroupChatReq represents DTO for creating group chat.
+type CreateGroupChatReq struct {
 	ParticipantIDs []int64 `json:"participant_ids" binding:"required,min=2"`
 	Name           string  `json:"name" binding:"required"`
 	Title          *string `json:"title,omitempty"`
@@ -13,20 +19,14 @@ type CreateGroupChat struct {
 	OwnerID        int64   `json:"owner_id" binding:"required"`
 }
 
-// CreateDirectChat represents DTO for creating direct chat.
-type CreateDirectChat struct {
-	SenderID    int64 `json:"sender_id" binding:"required"`
-	RecipientID int64 `json:"recipient_id" binding:"required"`
-}
-
-// DirectChatData represents DTO for direct chat response data.
-type DirectChatData struct {
+// DirectChatResp represents DTO for direct chat response data.
+type DirectChatResp struct {
 	ChatID    int64     `json:"chat_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// GroupChatData represents DTO for group chat response data.
-type GroupChatData struct {
+// GroupChatResp represents DTO for group chat response data.
+type GroupChatResp struct {
 	ChatID         int64     `json:"chat_id"`
 	ParticipantIDs []int64   `json:"participant_ids"`
 	Type           string    `json:"type"`
@@ -35,4 +35,18 @@ type GroupChatData struct {
 	Description    *string   `json:"description,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 	OwnerID        int64     `json:"owner_id"`
+}
+
+// SendMessage represents DTO for message sending
+type SendMessageReq struct {
+	ChatID   int64  `json:"chat_id"`
+	SenderID int64  `json:"sender_id"`
+	Message  string `json:"message" binding:"required"`
+}
+
+// SendMessage represents DTO for message sending
+type SendMessageResp struct {
+	ChatID   int64  `json:"chat_id"`
+	SenderID int64  `json:"sender_id"`
+	Status   string `json:"status"`
 }

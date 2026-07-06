@@ -3,6 +3,7 @@ package messenger
 import (
 	"context"
 
+	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
@@ -15,14 +16,16 @@ type MessengerRepository interface {
 	GetUserDataByUsername(ctx context.Context, username string) (*entity.User, error)
 
 	// CreateChat accept user IDs and create direct chat.
-	CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error
+	CreateDirectChatReq(ctx context.Context, chat *entity.DirectChat) error
 
 	// CreateChat accept user IDs and create group chat.
-	CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error
+	CreateGroupChatReq(ctx context.Context, chat *entity.GroupChat) error
 }
 
 // MessageBroker represents interface for work with the messenger broker
 type MessageBroker interface {
+	// SendMessage sends message into target chat.
+	SendMessage(message *dto.SendMessageReq) error
 }
 
 // MessengerService represents implementation of messenger interface.

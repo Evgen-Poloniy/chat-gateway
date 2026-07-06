@@ -10,7 +10,7 @@ import (
 )
 
 // CreateChat accept user IDs and create direct chat.
-func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error {
+func (p *PostgresRepository) CreateDirectChatReq(ctx context.Context, chat *entity.DirectChat) error {
 	tx, err := p.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return errs.NewAppError("DATABASE_ERROR", "database error: failed to begin transaction", err)
@@ -43,8 +43,8 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.
 	return nil
 }
 
-// CreateGroupChat accept user IDs, chat name, chat owner user_id and create group chat between several users.
-func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error {
+// CreateGroupChatReq accept user IDs, chat name, chat owner user_id and create group chat between several users.
+func (p *PostgresRepository) CreateGroupChatReq(ctx context.Context, chat *entity.GroupChat) error {
 	tx, err := p.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
