@@ -51,18 +51,18 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 
 // GetUserDataByUsername gets all data about user from the messenger database.
 func (h *Handler) GetUserDataByUsername(c *gin.Context) {
-	var req dto.GetUserData
-	if err := c.ShouldBindJSON(&req); err != nil {
+	username := c.Query("username")
+	if username == "" {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "BAD_REQUEST",
-			Message:    err.Error(),
-			Err:        err,
+			Message:    errs.ErrUsernameIsRequired.Error(),
+			Err:        errs.ErrUsernameIsRequired,
 		})
 		return
 	}
 
-	user, err := h.messenger.GetUserDataByUsername(c.Request.Context(), req.Username)
+	user, err := h.messenger.GetUserDataByUsername(c.Request.Context(), username)
 	if err != nil {
 		c.Error(err)
 		return

@@ -51,3 +51,8 @@ var (
 var (
 	ErrChatAlreadyExists = errors.New("chat already exists")
 )
+
+// Transport errors.
+var (
+	ErrUsernameIsRequired = errors.New("username is required")
+)

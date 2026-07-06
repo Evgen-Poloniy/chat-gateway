@@ -20,5 +20,10 @@ func NewRouter(router *gin.Engine, handler *Handler) {
 			chats.POST("/create/group", handler.CreateGroupChatReq)
 			chats.POST("/send", handler.SendMessage)
 		}
+
+		users := protected.Group("/users")
+		{
+			users.GET("/get")
+		}
 	}
 }
