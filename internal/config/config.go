@@ -85,6 +85,7 @@ type MessageBrokerConfig struct {
 	CompressionType            string `yaml:"compression_type" validate:"oneof=none gzip snpappy lz4 zstd"`
 	QueueBufferingMaxMessages  int    `yaml:"queue_buffering_max_messages"`
 	MessageTimeout             int    `yaml:"message_timeout"`
+	NumPartitions              int    `yaml:"num.partitions"`
 	FlashTimeout               int    `yaml:"flash_timeout"`
 }
 

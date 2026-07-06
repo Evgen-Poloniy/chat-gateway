@@ -39,39 +39,42 @@ database:
   conn_max_idle_lifetime: 2m # seconds, minutes
 
 message-broker:
-    # Broker addresses
-    bootstrap.servers: "localhost:9090"
+  # Broker addresses
+  bootstrap.servers: "localhost:9090"
 
-    # --- Reliability & Delivery Guarantees ---
-    # Wait for all in-sync replicas (ISR) to acknowledge. Prevents message loss.
-    acks: "all"
+  # --- Reliability & Delivery Guarantees ---
+  # Wait for all in-sync replicas (ISR) to acknowledge. Prevents message loss.
+  acks: "all"
 
-    # Prevents duplicate messages and strictly guarantees ordering per partition.
-    enable.idempotence: true
+  # Prevents duplicate messages and strictly guarantees ordering per partition.
+  enable.idempotence: true
 
-    # Infinite retries for transient network errors.
-    retries: 2147483647
+  # Infinite retries for transient network errors.
+  retries: 2147483647
 
-    # Max parallel requests. Value of 5 maintains order when idempotence is true.
-    max.in.flight.requests.per.connection: 5
+  # Max parallel requests. Value of 5 maintains order when idempotence is true.
+  max.in.flight.requests.per.connection: 5
 
-    # --- Latency & Batching ---
-    # Time to wait (ms) to group messages. 5ms balances low latency and efficiency.
-    linger.ms: 20
+  # --- Latency & Batching ---
+  # Time to wait (ms) to group messages. 5ms balances low latency and efficiency.
+  linger.ms: 20
 
-    # Maximum number of messages per batch.
-    batch.num.messages: 1000
+  # Maximum number of messages per batch.
+  batch.num.messages: 1000
 
-    # --- Compression ---
-    # Compresses text efficiently with minimal CPU overhead.
-    compression.type: "lz4"
+  # --- Compression ---
+  # Compresses text efficiently with minimal CPU overhead.
+  compression.type: "lz4"
 
-    # --- Queue Management ---
-    # Max messages allowed in the local producer queue buffer.
-    queue.buffering.max.messages: 100000
+  # --- Queue Management ---
+  # Max messages allowed in the local producer queue buffer.
+  queue.buffering.max.messages: 100000
 
-    # Max time (ms) a message can spend in the queue before failing.
-    message.timeout.ms: 30000
+  # Max time (ms) a message can spend in the queue before failing.
+  message.timeout.ms: 30000
 
-    # Timeout for flush messages into broker (s)
-    flash_timeout: 15
+  # Number of partitions
+  num.partitions: 1
+
+  # Timeout for flush messages into broker (s)
+  flash_timeout: 15

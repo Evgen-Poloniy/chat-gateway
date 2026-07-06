@@ -9,6 +9,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	MessageTopic = "message-topic"
+)
+
 func NewKafkaProducer(config *config.MessageBrokerConfig, logger *logrus.Logger) (*kafka.Producer, error) {
 	configMap := &kafka.ConfigMap{
 		"bootstrap.servers":                     config.BootstrapServers,
@@ -21,6 +25,7 @@ func NewKafkaProducer(config *config.MessageBrokerConfig, logger *logrus.Logger)
 		"compression.type":                      config.CompressionType,
 		"queue.buffering.max.messages":          config.QueueBufferingMaxMessages,
 		"message.timeout.ms":                    config.MessageTimeout,
+		"num.partitions":                        config.NumPartitions,
 	}
 
 	if config.SecurityProtocol != "" && config.SecurityProtocol != "PLAINTEXT" {
