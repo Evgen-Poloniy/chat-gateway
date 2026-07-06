@@ -39,7 +39,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	}
 
 	userData := &dto.UserData{
-		UserID:    user.ID,
+		UserID:    user.UserID,
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName,

@@ -36,7 +36,7 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) 
 	defer rows.Close()
 
 	if rows.Next() {
-		err = rows.Scan(&user.ID, &user.CreatedAt)
+		err = rows.Scan(&user.UserID, &user.CreatedAt)
 		if err != nil {
 			return err
 		}
