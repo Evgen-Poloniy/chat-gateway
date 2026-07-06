@@ -12,9 +12,8 @@ import (
 func Logger(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var statusCode int
-		var code string
 
-		id := uuid.New().String()
+		id := uuid.NewString()
 
 		entry := logger.WithFields(map[string]interface{}{
 			"id":     id,
@@ -26,13 +25,17 @@ func Logger(logger *logrus.Logger) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
 
-			statusCode, _ = c.MustGet("status_code").(int)
-			code, _ = c.MustGet("code").(string)
-
-			entry = entry.WithFields(map[string]interface{}{
-				"status_code": statusCode,
-				"code":        code,
-			})
+			if val, exists := c.Get("status_code"); exists {
+				if v, ok := val.(int); ok {
+					statusCode = v
+					entry = entry.WithField("status_code", statusCode)
+				}
+			}
+			if val, exists := c.Get("code"); exists {
+				if v, ok := val.(string); ok {
+					entry = entry.WithField("code", v)
+				}
+			}
 
 			if statusCode >= 500 {
 				entry.Error(err.Error())
@@ -73,10 +76,17 @@ func Logger(logger *logrus.Logger) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
 
-			statusCode, _ = c.MustGet("status_code").(int)
-			code, _ := c.MustGet("code").(string)
-
-			entry = entry.WithField("code", code)
+			if val, exists := c.Get("status_code"); exists {
+				if v, ok := val.(int); ok {
+					statusCode = v
+					entry = entry.WithField("status_code", statusCode)
+				}
+			}
+			if val, exists := c.Get("code"); exists {
+				if v, ok := val.(string); ok {
+					entry = entry.WithField("code", v)
+				}
+			}
 
 			if statusCode >= 500 {
 				entry.Error(err.Error())

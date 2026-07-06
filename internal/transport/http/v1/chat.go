@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
@@ -15,7 +14,7 @@ import (
 func (h *Handler) CreateDirectChat(c *gin.Context) {
 	var req dto.CreateDirectChat
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.AppError{
+		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "BAD_REQUEST",
 			Message:    err.Error(),
@@ -29,11 +28,7 @@ func (h *Handler) CreateDirectChat(c *gin.Context) {
 	}
 
 	if err := h.messenger.CreateDirectChat(c.Request.Context(), chat); err != nil {
-		c.Error(&errs.AppError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "INTERNAL_SERVER_ERROR",
-			Message:    fmt.Sprintf("database error: %v", err),
-		})
+		c.Error(err)
 	}
 
 	resp := &dto.DirectChatData{
@@ -47,7 +42,7 @@ func (h *Handler) CreateDirectChat(c *gin.Context) {
 func (h *Handler) CreateGroupChat(c *gin.Context) {
 	var req dto.CreateGroupChat
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.AppError{
+		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "BAD_REQUEST",
 			Message:    err.Error(),
@@ -64,11 +59,7 @@ func (h *Handler) CreateGroupChat(c *gin.Context) {
 	}
 
 	if err := h.messenger.CreateGroupChat(c.Request.Context(), chat); err != nil {
-		c.Error(&errs.AppError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "INTERNAL_SERVER_ERROR",
-			Message:    fmt.Sprintf("database error: %v", err),
-		})
+		c.Error(err)
 	}
 
 	resp := &dto.GroupChatData{

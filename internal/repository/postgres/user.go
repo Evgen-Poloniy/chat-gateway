@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
@@ -23,9 +22,9 @@ func (p *PostgresRepository) GetUserDataByUsername(ctx context.Context, username
 
 	if err := p.db.GetContext(ctx, &user, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user with username '%s' not found: %w", username, errs.ErrRecordNotFound)
+			return nil, errs.ErrRecordNotFound
 		}
-		return nil, err
+		return nil, errs.NewAppError("DATABASE_ERROR", "database error: query error", err)
 	}
 
 	return &user, nil
@@ -41,21 +40,24 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) 
 
 	rows, err := p.db.NamedQueryContext(ctx, query, user)
 	if err != nil {
-		return err
+		return errs.NewAppError("DATABASE_ERROR", "database error: failed to insert values into table", err)
 	}
 	defer rows.Close()
 
 	if rows.Next() {
 		err = rows.Scan(&user.UserID, &user.CreatedAt)
 		if err != nil {
-			return err
+			if errors.Is(err, sql.ErrNoRows) {
+				return errs.ErrRecordNotFound
+			}
+			return errs.NewAppError("DATABASE_ERROR", "database error: failed to scan rows", err)
 		}
 
 		return nil
 	}
 
 	if err = rows.Err(); err != nil {
-		return err
+		return errs.NewAppError("DATABASE_ERROR", "database error: rows error", err)
 	}
 
 	return errs.ErrRecordNotFound

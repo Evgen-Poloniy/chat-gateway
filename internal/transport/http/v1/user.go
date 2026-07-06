@@ -14,10 +14,11 @@ import (
 func (h *Handler) RegisterUser(c *gin.Context) {
 	var req dto.RegisterUser
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.AppError{
+		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "BAD_REQUEST",
 			Message:    err.Error(),
+			Err:        err,
 		})
 		return
 	}
@@ -32,11 +33,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	}
 
 	if err := h.messenger.CreateUser(c.Request.Context(), user); err != nil {
-		c.Error(&errs.AppError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       "INTERNAL_SERVER_ERROR",
-			Message:    "error when create user",
-		})
+		c.Error(err)
 	}
 
 	resp := &dto.UserData{
@@ -56,10 +53,11 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 func (h *Handler) GetUserDataByUsername(c *gin.Context) {
 	var req dto.GetUserData
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.AppError{
+		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "BAD_REQUEST",
 			Message:    err.Error(),
+			Err:        err,
 		})
 		return
 	}

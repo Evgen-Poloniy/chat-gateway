@@ -6,13 +6,14 @@ import (
 	"strings"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 )
 
 // CreateChat accept user IDs and create direct chat.
 func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error {
 	tx, err := p.db.BeginTxx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return errs.NewAppError("DATABASE_ERROR", "database error: failed to begin transaction", err)
 	}
 	defer tx.Rollback()
 
@@ -23,7 +24,7 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.
 
 	err = tx.QueryRowxContext(ctx, chatQuery).Scan(&chat.ChatID, &chat.CreatedAt)
 	if err != nil {
-		return fmt.Errorf("failed to insert chat: %w", err)
+		return errs.NewAppError("DATABASE_ERROR", "database error: failed to insert values into table", err)
 	}
 
 	membersQuery := `
@@ -32,11 +33,11 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.
 
 	_, err = tx.ExecContext(ctx, membersQuery, chat.ChatID, chat.SenderID, chat.RecipientID)
 	if err != nil {
-		return fmt.Errorf("failed to insert chat members: %w", err)
+		return errs.NewAppError("DATABASE_ERROR", "database error: failed to insert values into table", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return errs.NewAppError("DATABASE_ERROR", "database error: failed to commit transaction", err)
 	}
 
 	return nil
@@ -59,7 +60,7 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.G
 		ctx, chatQuery, chat.Name, chat.Title, chat.Description, chat.OwnerID,
 	).Scan(&chat.ChatID, &chat.CreatedAt)
 	if err != nil {
-		return fmt.Errorf("failed to insert chat: %w", err)
+		return errs.NewAppError("DATABASE_ERROR", "database error: failed to insert values into table", err)
 	}
 
 	values := make([]string, 0, len(chat.ParticipantIDs))
@@ -76,11 +77,11 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.G
 
 	_, err = tx.ExecContext(ctx, membersQuery, args...)
 	if err != nil {
-		return fmt.Errorf("failed to insert chat members: %w", err)
+		return errs.NewAppError("DATABASE_ERROR", "database error: failed to insert values into table", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return errs.NewAppError("DATABASE_ERROR", "database error: failed to commit transaction", err)
 	}
 
 	return nil

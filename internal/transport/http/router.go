@@ -69,7 +69,7 @@ func NewRouter(logger *logrus.Logger, config *config.CORSConfig) *gin.Engine {
 // logAndResponseJSON is used in endpoints for logging and request request errors:
 // URL not found and method not allowed.
 func logAndResponseJSON(c *gin.Context, logger *logrus.Logger, statusCode int, code string, message string) {
-	id := uuid.New().String()
+	id := uuid.NewString()
 
 	entry := logger.WithFields(map[string]interface{}{
 		"id":     id,
