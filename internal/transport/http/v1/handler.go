@@ -15,6 +15,9 @@ type MessengerService interface {
 	// GetUserDataByUsername gets all data about user from the messenger database.
 	GetUserDataByUsername(ctx context.Context, username string) (*entity.User, error)
 
+	// UpdateUser updates data about user into messenger database.
+	UpdateUser(ctx context.Context, user *entity.UpdateUser) error
+
 	// CreateDirectChatReq accept user IDs and create direct chat between two users.
 	CreateDirectChatReq(ctx context.Context, chat *entity.DirectChat) error
 

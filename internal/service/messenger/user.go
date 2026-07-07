@@ -15,3 +15,8 @@ func (m *MessengerService) GetUserDataByUsername(ctx context.Context, username s
 func (m *MessengerService) CreateUser(ctx context.Context, user *entity.User) error {
 	return m.messengerRepository.CreateUser(ctx, user)
 }
+
+// UpdateUser updates data about user into messenger database.
+func (m *MessengerService) UpdateUser(ctx context.Context, user *entity.UpdateUser) error {
+	return m.messengerRepository.UpdateUser(ctx, user)
+}

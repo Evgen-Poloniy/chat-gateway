@@ -55,4 +55,6 @@ var (
 // Transport errors.
 var (
 	ErrUsernameIsRequired = errors.New("username is required")
+	ErrUserIdIsRequired   = errors.New("user_id is required")
+	ErrInvalidParameter   = errors.New("invalid parameter")
 )

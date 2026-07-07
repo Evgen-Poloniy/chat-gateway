@@ -2,6 +2,7 @@ package v1
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
@@ -51,7 +52,29 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 
 // RegisterUser register user by username and details about user.
 func (h *Handler) UpdateUser(c *gin.Context) {
-	var req dto.RegisterUserReq
+	userIdParam := c.Param("id")
+	if userIdParam == "" {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "BAD_REQUEST",
+			Message:    errs.ErrUserIdIsRequired.Error(),
+			Err:        errs.ErrUserIdIsRequired,
+		})
+		return
+	}
+
+	userID, err := strconv.Atoi(userIdParam)
+	if err != nil {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "BAD_REQUEST",
+			Message:    errs.ErrInvalidParameter.Error(),
+			Err:        err,
+		})
+		return
+	}
+
+	var req dto.UpdateUserReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
@@ -62,7 +85,8 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user := &entity.User{
+	user := &entity.UpdateUser{
+		UserID:    int64(userID),
 		Username:  req.Username,
 		Email:     req.Email,
 		FirstName: req.FirstName,
@@ -71,13 +95,13 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		Gender:    req.Gender,
 	}
 
-	if err := h.messenger.CreateUser(c.Request.Context(), user); err != nil {
+	if err := h.messenger.UpdateUser(c.Request.Context(), user); err != nil {
 		c.Error(err)
 	}
 
 	resp := &dto.UserDataResp{
 		UserID:    user.UserID,
-		Username:  user.Username,
+		Username:  *user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
@@ -85,12 +109,12 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		Gender:    user.Gender,
 	}
 
-	c.JSON(http.StatusCreated, resp)
+	c.JSON(http.StatusOK, resp)
 }
 
 // GetUserDataByUsername gets all data about user from the messenger database.
 func (h *Handler) GetUserDataByUsername(c *gin.Context) {
-	username := c.Param("id")
+	username := c.Param("username")
 	if username == "" {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,

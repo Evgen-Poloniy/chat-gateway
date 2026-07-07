@@ -62,3 +62,24 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) 
 
 	return errs.ErrRecordNotFound
 }
+
+// UpdateUser updates data about user into messenger database.
+func (p *PostgresRepository) UpdateUser(ctx context.Context, user *entity.UpdateUser) error {
+	query := `
+        UPDATE users
+        SET
+            username = COALESCE(:username, username),
+            email = COALESCE(:email, email),
+            first_name = COALESCE(:first_name, first_name),
+            last_name = COALESCE(:last_name, last_name),
+            birth_date = COALESCE(:birth_date, birth_date),
+            gender = COALESCE(:gender, gender)
+        WHERE id = :id
+    `
+
+	if _, err := p.db.NamedExecContext(ctx, query, user); err != nil {
+		return errs.NewAppError("DATABASE_ERROR", "database error: failed to update values into table", err)
+	}
+
+	return nil
+}

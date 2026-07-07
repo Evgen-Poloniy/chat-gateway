@@ -23,7 +23,8 @@ func NewRouter(router *gin.Engine, handler *Handler) {
 
 		users := protected.Group("/users")
 		{
-			users.GET("/:id")
+			users.GET("/get/:username", handler.GetUserDataByUsername)
+			users.PATCH("/update/:id", handler.UpdateUser)
 		}
 	}
 }
