@@ -44,10 +44,22 @@ func ErrorHandler() gin.HandlerFunc {
 			code = httpError.Code
 			message = httpError.Message
 		} else if appError, ok := errors.AsType[*errs.AppError](err); ok {
-			statusCode = http.StatusInternalServerError
+			if errors.Is(appError.Err, errs.ErrRecordNotFound) {
+				statusCode = http.StatusNotFound
+			} else if errors.Is(appError.Err, errs.ErrQuery) {
+				statusCode = http.StatusInternalServerError
+			} else if errors.Is(appError.Err, errs.ErrUniqueViolation) {
+				statusCode = http.StatusBadRequest
+			} else if errors.Is(appError.Err, errs.ErrFailedToBeginTransaction) {
+				statusCode = http.StatusInternalServerError
+			} else if errors.Is(appError.Err, errs.ErrFailedToCommitTransaction) {
+				statusCode = http.StatusInternalServerError
+			} else {
+				statusCode = http.StatusInternalServerError
+			}
 			code = appError.Code
 			message = appError.Message
-			c.Error(appError.Err)
+			c.Error(errors.New(appError.Details))
 		} else if errors.Is(err, errs.ErrRecordNotFound) {
 			statusCode = http.StatusNotFound
 			code = "RECORD_NOT_FOUND"

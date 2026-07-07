@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -22,9 +24,20 @@ func (p *PostgresRepository) GetUserDataByUsername(ctx context.Context, username
 
 	if err := p.db.GetContext(ctx, &user, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.ErrRecordNotFound
+			return nil, errs.NewAppError(
+				"NOT_FOUND",
+				fmt.Sprintf("database error: record with username '%s' not found", username),
+				fmt.Sprintf("database error: record with username '%s' not found", username),
+				errs.ErrRecordNotFound,
+			)
 		}
-		return nil, errs.NewAppError("DATABASE_ERROR", "database error: query error", err)
+
+		return nil, errs.NewAppError(
+			"QUERY_ERROR",
+			"database error: query error",
+			fmt.Sprintf("database error: %v", err),
+			errs.ErrQuery,
+		)
 	}
 
 	return &user, nil
@@ -40,7 +53,23 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) 
 
 	rows, err := p.db.NamedQueryContext(ctx, query, user)
 	if err != nil {
-		return errs.NewAppError("DATABASE_ERROR", "database error: failed to insert values into table", err)
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
+			if pgErr.Code == "23505" {
+				return errs.NewAppError(
+					"UNIQUE_VIOLATION",
+					"database error: "+pgErr.Message,
+					fmt.Sprintf("database error: %s", pgErr.Detail),
+					errs.ErrUniqueViolation,
+				)
+			}
+		}
+
+		return errs.NewAppError(
+			"QUERY_ERROR",
+			"database error: failed to insert values into table",
+			fmt.Sprintf("database error: %v", err),
+			errs.ErrQuery,
+		)
 	}
 	defer rows.Close()
 
@@ -50,17 +79,33 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) 
 			if errors.Is(err, sql.ErrNoRows) {
 				return errs.ErrRecordNotFound
 			}
-			return errs.NewAppError("DATABASE_ERROR", "database error: failed to scan rows", err)
+
+			return errs.NewAppError(
+				"QUERY_ERROR",
+				"database error: failed to scan rows",
+				fmt.Sprintf("database error: %v", err),
+				errs.ErrQuery,
+			)
 		}
 
 		return nil
 	}
 
 	if err = rows.Err(); err != nil {
-		return errs.NewAppError("DATABASE_ERROR", "database error: rows error", err)
+		return errs.NewAppError(
+			"QUERY_ERROR",
+			"database error: rows error",
+			fmt.Sprintf("database error: %v", err),
+			errs.ErrQuery,
+		)
 	}
 
-	return errs.ErrRecordNotFound
+	return errs.NewAppError(
+		"NOT_FOUND",
+		"database error: record not found",
+		"database error: record not found",
+		errs.ErrRecordNotFound,
+	)
 }
 
 // UpdateUser updates data about user into messenger database.
@@ -78,7 +123,23 @@ func (p *PostgresRepository) UpdateUser(ctx context.Context, user *entity.Update
     `
 
 	if _, err := p.db.NamedExecContext(ctx, query, user); err != nil {
-		return errs.NewAppError("DATABASE_ERROR", "database error: failed to update values into table", err)
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
+			if pgErr.Code == "23505" {
+				return errs.NewAppError(
+					"UNIQUE_VIOLATION",
+					"database error: "+pgErr.Message,
+					fmt.Sprintf("database error: %s", pgErr.Detail),
+					errs.ErrUniqueViolation,
+				)
+			}
+		}
+
+		return errs.NewAppError(
+			"QUERY_ERROR",
+			"database error: failed to insert values into table",
+			fmt.Sprintf("database error: %v", err),
+			errs.ErrQuery,
+		)
 	}
 
 	return nil

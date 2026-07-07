@@ -6,13 +6,14 @@ import "errors"
 type AppError struct {
 	Code    string
 	Message string
+	Details string
 	Err     error
 }
 
 // Http error type
 type HttpError struct {
-	StatusCode int
 	Code       string
+	StatusCode int
 	Message    string
 	Err        error
 }
@@ -21,10 +22,11 @@ func (e *AppError) Error() string {
 	return e.Message
 }
 
-func NewAppError(code, message string, err error) *AppError {
+func NewAppError(code, message, details string, err error) *AppError {
 	return &AppError{
 		Code:    code,
 		Message: message,
+		Details: details,
 		Err:     err,
 	}
 }
@@ -33,10 +35,10 @@ func (e *HttpError) Error() string {
 	return e.Message
 }
 
-func NewHttpError(statusCode int, code, message string, err error) *HttpError {
+func NewHttpError(code string, statusCode int, message string, err error) *HttpError {
 	return &HttpError{
-		StatusCode: statusCode,
 		Code:       code,
+		StatusCode: statusCode,
 		Message:    message,
 		Err:        err,
 	}
@@ -44,12 +46,13 @@ func NewHttpError(statusCode int, code, message string, err error) *HttpError {
 
 // Repository errors.
 var (
-	ErrRecordNotFound = errors.New("record not found")
-)
-
-// Service errors.
-var (
-	ErrChatAlreadyExists = errors.New("chat already exists")
+	ErrQuery                     = errors.New("database query error")
+	ErrRecordNotFound            = errors.New("record not found")
+	ErrUniqueViolation           = errors.New("inserted value must be unique")
+	ErrFailedToBeginTransaction  = errors.New("failed to begin transaction")
+	ErrFailedToCommitTransaction = errors.New("failed to commit transaction")
+	ErrSerialization             = errors.New("serialization error")
+	ErrDeserialization           = errors.New("deserialization error")
 )
 
 // Transport errors.

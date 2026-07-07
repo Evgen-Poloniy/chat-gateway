@@ -2,6 +2,7 @@ package kf
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
@@ -14,7 +15,12 @@ import (
 func (k *KafkaRepository) SendMessage(message *dto.SendMessageReq) error {
 	values, err := json.Marshal(message)
 	if err != nil {
-		return errs.NewAppError("SERIALIZATION_ERROR", "message broker error: failed to serialize incoming message data", err)
+		return errs.NewAppError(
+			"SERIALIZATION_ERROR",
+			"message broker error: failed to serialize incoming message data",
+			fmt.Sprintf("message broker error: %v", err),
+			errs.ErrSerialization,
+		)
 	}
 
 	topic := database.MessageTopic
