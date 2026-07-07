@@ -18,11 +18,11 @@ type MessengerService interface {
 	// UpdateUser updates data about user into messenger database.
 	UpdateUser(ctx context.Context, user *entity.UpdateUser) error
 
-	// CreateDirectChatReq accept user IDs and create direct chat between two users.
-	CreateDirectChatReq(ctx context.Context, chat *entity.DirectChat) error
+	// CreateDirectChat accept user IDs and create direct chat between two users.
+	CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error
 
-	// CreateGroupChatReq accept user IDs, chat name, chat owner user_id and create group chat between several users.
-	CreateGroupChatReq(ctx context.Context, chat *entity.GroupChat) error
+	// CreateGroupChat accept user IDs, chat name, chat owner user_id and create group chat between several users.
+	CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error
 
 	// SendMessage sends message into target chat.
 	SendMessage(message *dto.SendMessageReq) error

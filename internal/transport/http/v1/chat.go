@@ -10,8 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreateDirectChatReq create direct chat into the messenger database.
-func (h *Handler) CreateDirectChatReq(c *gin.Context) {
+// CreateDirectChat create direct chat into the messenger database.
+func (h *Handler) CreateDirectChat(c *gin.Context) {
 	var req dto.CreateDirectChatReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
@@ -27,7 +27,7 @@ func (h *Handler) CreateDirectChatReq(c *gin.Context) {
 		RecipientID: req.RecipientID,
 	}
 
-	if err := h.messenger.CreateDirectChatReq(c.Request.Context(), chat); err != nil {
+	if err := h.messenger.CreateDirectChat(c.Request.Context(), chat); err != nil {
 		c.Error(err)
 	}
 
@@ -38,8 +38,8 @@ func (h *Handler) CreateDirectChatReq(c *gin.Context) {
 	c.JSON(http.StatusCreated, resp)
 }
 
-// CreateGroupChatReq create group chat into the messenger database.
-func (h *Handler) CreateGroupChatReq(c *gin.Context) {
+// CreateGroupChat create group chat into the messenger database.
+func (h *Handler) CreateGroupChat(c *gin.Context) {
 	var req dto.CreateGroupChatReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
@@ -58,7 +58,7 @@ func (h *Handler) CreateGroupChatReq(c *gin.Context) {
 		OwnerID:        req.OwnerID,
 	}
 
-	if err := h.messenger.CreateGroupChatReq(c.Request.Context(), chat); err != nil {
+	if err := h.messenger.CreateGroupChat(c.Request.Context(), chat); err != nil {
 		c.Error(err)
 	}
 

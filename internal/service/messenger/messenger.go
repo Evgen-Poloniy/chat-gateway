@@ -19,10 +19,10 @@ type MessengerRepository interface {
 	UpdateUser(ctx context.Context, user *entity.UpdateUser) error
 
 	// CreateChat accept user IDs and create direct chat.
-	CreateDirectChatReq(ctx context.Context, chat *entity.DirectChat) error
+	CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error
 
 	// CreateChat accept user IDs and create group chat.
-	CreateGroupChatReq(ctx context.Context, chat *entity.GroupChat) error
+	CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error
 }
 
 // MessageBroker represents interface for work with the messenger broker
