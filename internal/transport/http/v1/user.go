@@ -17,7 +17,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    err.Error(),
 			Err:        err,
 		})
@@ -56,7 +56,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	if userIdParam == "" {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    errs.ErrUserIdIsRequired.Error(),
 			Err:        errs.ErrUserIdIsRequired,
 		})
@@ -67,7 +67,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	if err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    errs.ErrInvalidParameter.Error(),
 			Err:        err,
 		})
@@ -78,7 +78,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    err.Error(),
 			Err:        err,
 		})
@@ -118,7 +118,7 @@ func (h *Handler) GetUserDataByUsername(c *gin.Context) {
 	if username == "" {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    errs.ErrUsernameIsRequired.Error(),
 			Err:        errs.ErrUsernameIsRequired,
 		})
@@ -150,7 +150,7 @@ func (h *Handler) GetUserDataByUserID(c *gin.Context) {
 	if userIdParam == "" {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    errs.ErrUserIdIsRequired.Error(),
 			Err:        errs.ErrUserIdIsRequired,
 		})
@@ -161,7 +161,7 @@ func (h *Handler) GetUserDataByUserID(c *gin.Context) {
 	if err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    errs.ErrInvalidParameter.Error(),
 			Err:        err,
 		})

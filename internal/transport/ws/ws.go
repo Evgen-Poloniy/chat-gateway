@@ -49,20 +49,20 @@ func WebSocketUpgrade(c *gin.Context, logger *logrus.Logger) {
 
 	queryUserID := c.Query("user_id")
 	if queryUserID == "" {
-		abortWithError(c, logger, http.StatusBadRequest, "BAD_REQUEST", "user_id is required", start, id)
+		abortWithError(c, logger, http.StatusBadRequest, "bad_request", "user_id is required", start, id)
 		return
 	}
 
 	userID, err := strconv.Atoi(queryUserID)
 	if err != nil {
-		abortWithError(c, logger, http.StatusBadRequest, "BAD_REQUEST", "user_id must be an integer", start, id)
+		abortWithError(c, logger, http.StatusBadRequest, "bad_request", "user_id must be an integer", start, id)
 		return
 	}
 
 	conn, err := hub.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		message := fmt.Sprintf("failed to upgrade connection to websocket: %v", err)
-		abortWithError(c, logger, http.StatusInternalServerError, "FAILED_TO_UPGRADE_TO_WEBSOCKET", message, start, id)
+		abortWithError(c, logger, http.StatusInternalServerError, "failed_to_upgrade_to_websocket_connection", message, start, id)
 		return
 	}
 
@@ -82,7 +82,7 @@ func WebSocketUpgrade(c *gin.Context, logger *logrus.Logger) {
 				"path":       c.Request.URL.Path,
 				"ip":         c.ClientIP(),
 				"close_code": websocket.CloseInternalServerErr,
-				"code":       "FAILED_TO_CLOSE_WS",
+				"code":       "failed_to_close_websocket_connection",
 			}).Error(fmt.Errorf("failed to close websocket connection: %w", err))
 		}
 	}()
@@ -107,15 +107,15 @@ func WebSocketUpgrade(c *gin.Context, logger *logrus.Logger) {
 				message = "websocket connection going away"
 			case websocket.CloseAbnormalClosure:
 				closeCode = websocket.CloseAbnormalClosure
-				code = "WS_CONNECTION_UNEXPECTEDLY_CLOSED"
+				code = "websocket_connection_unexpectedly_closed"
 				message = fmt.Sprintf("websocket connection closed unexpectedly: %v", err)
 			case websocket.CloseInternalServerErr:
 				closeCode = websocket.CloseInternalServerErr
-				code = "WS_INTERNAL_SERVER_ERROR"
+				code = "websocket_internal_server_error"
 				message = fmt.Sprintf("websocket connection error: %v", err)
 			default:
 				closeCode = websocket.CloseInternalServerErr
-				code = "WS_UNKNOWN_ERROR"
+				code = "websocket_unknown_error"
 				message = fmt.Sprintf("websocket connection error: %v", err)
 			}
 

@@ -16,7 +16,7 @@ func (h *Handler) CreateDirectChat(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    err.Error(),
 		})
 		return
@@ -44,7 +44,7 @@ func (h *Handler) CreateGroupChat(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    err.Error(),
 		})
 		return
@@ -80,7 +80,7 @@ func (h *Handler) SendMessage(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
-			Code:       "BAD_REQUEST",
+			Code:       "bad_request",
 			Message:    err.Error(),
 		})
 		return
