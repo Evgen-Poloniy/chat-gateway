@@ -2,6 +2,8 @@ package dto
 
 import (
 	"time"
+
+	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
 // CreateDirectChatReq represents DTO for creating direct chat.
@@ -49,4 +51,9 @@ type SendMessageResp struct {
 	ChatID   int64  `json:"chat_id"`
 	SenderID int64  `json:"sender_id"`
 	Status   string `json:"status"`
+}
+
+// ChatsResp represents DTO response with user chats
+type ChatsResp struct {
+	Chats []entity.Chat `json:"chats"`
 }

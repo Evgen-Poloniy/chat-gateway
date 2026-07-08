@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -63,13 +64,13 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	userID, err := strconv.Atoi(userIdParam)
+	userID, err := strconv.ParseInt(userIdParam, 10, 64)
 	if err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "bad_request",
-			Message:    errs.ErrInvalidParameter.Error(),
-			Err:        err,
+			Message:    "failed to convert parameter 'user_id' to int64",
+			Err:        fmt.Errorf("failed to convert parameter 'user_id' to int64: %v", err),
 		})
 		return
 	}
@@ -86,7 +87,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	}
 
 	user := &entity.UpdateUser{
-		UserID:    int64(userID),
+		UserID:    userID,
 		Username:  req.Username,
 		Email:     req.Email,
 		FirstName: req.FirstName,
@@ -157,18 +158,18 @@ func (h *Handler) GetUserDataByUserID(c *gin.Context) {
 		return
 	}
 
-	userID, err := strconv.Atoi(userIdParam)
+	userID, err := strconv.ParseInt(userIdParam, 10, 64)
 	if err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "bad_request",
-			Message:    errs.ErrInvalidParameter.Error(),
-			Err:        err,
+			Message:    "failed to convert parameter 'user_id' to int64",
+			Err:        fmt.Errorf("failed to convert parameter 'user_id' to int64: %v", err),
 		})
 		return
 	}
 
-	user, err := h.messenger.GetUserDataByUserID(c.Request.Context(), int64(userID))
+	user, err := h.messenger.GetUserDataByUserID(c.Request.Context(), userID)
 	if err != nil {
 		c.Error(err)
 	}

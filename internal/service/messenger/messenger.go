@@ -26,6 +26,9 @@ type MessengerRepository interface {
 
 	// CreateChat accept user IDs and create group chat.
 	CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error
+
+	// GetChatsByUserID gets chat by user_id with limits and offset
+	GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]entity.Chat, error)
 }
 
 // MessageBroker represents interface for work with the messenger broker

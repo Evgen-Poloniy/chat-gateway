@@ -140,3 +140,34 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.G
 
 	return nil
 }
+
+// GetChatsByUserID gets chat by user_id with limits and offset
+func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]entity.Chat, error) {
+	query := `
+		SELECT
+			c.id,
+			c.type,
+			c.name,
+			c.title,
+			c.description,
+			c.created_at,
+			c.owner_id
+		FROM chat_members cm
+		JOIN chats c ON cm.chat_id = c.id
+		WHERE cm.user_id = $1
+		LIMIT $2 OFFSET $3
+	`
+
+	var chats []entity.Chat
+
+	err := p.db.SelectContext(ctx, &chats, query, userID, limit, offset)
+	if err != nil {
+		return nil, errs.NewAppError(
+			errs.CodeUserNotFound,
+			fmt.Sprintf("database error: failed to get chats by user id: %d", userID),
+			fmt.Errorf("database error: %v", err),
+		)
+	}
+
+	return chats, nil
+}

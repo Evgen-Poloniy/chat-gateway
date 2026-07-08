@@ -19,6 +19,7 @@ func NewRouter(router *gin.Engine, handler *Handler) {
 			chats.POST("/create/direct", handler.CreateGroupChat)
 			chats.POST("/create/group", handler.CreateGroupChat)
 			chats.POST("/send", handler.SendMessage)
+			chats.GET("/get/:user_id", handler.GetChatsByUserID)
 		}
 
 		users := protected.Group("/users")

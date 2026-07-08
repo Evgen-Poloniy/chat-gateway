@@ -27,6 +27,9 @@ type MessengerService interface {
 	// CreateGroupChat accept user IDs, chat name, chat owner user_id and create group chat between several users.
 	CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error
 
+	// GetChatsByUserID gets chat by user_id with limits and offset
+	GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]entity.Chat, error)
+
 	// SendMessage sends message into target chat.
 	SendMessage(message *dto.SendMessageReq) error
 }

@@ -20,3 +20,14 @@ type GroupChat struct {
 	CreatedAt      time.Time
 	OwnerID        int64
 }
+
+// Chat represents model of chat
+type Chat struct {
+	ChatID      int64     `db:"id"`
+	ChatType    string    `db:"type"`
+	Name        *string   `db:"name"`
+	Title       *string   `db:"title"`
+	Description *string   `db:"description"`
+	CreatedAt   time.Time `db:"create_at"`
+	OwnerID     *int64    `db:"owner_id"`
+}

@@ -17,6 +17,11 @@ func (m *MessengerService) CreateGroupChat(ctx context.Context, chat *entity.Gro
 	return m.messengerRepository.CreateGroupChat(ctx, chat)
 }
 
+// GetChatsByUserID gets chat by user_id with limits and offset
+func (m *MessengerService) GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]entity.Chat, error) {
+	return m.messengerRepository.GetChatsByUserID(ctx, userID, limit, offset)
+}
+
 // SendMessage sends message into target chat.
 func (m *MessengerService) SendMessage(message *dto.SendMessageReq) error {
 	return m.messageBroker.SendMessage(message)

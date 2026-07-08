@@ -7,6 +7,7 @@ type ErrCode int
 const (
 	CodeUserNotFound ErrCode = iota
 	CodeChatNotFound
+	CodeUserHaveNotChats
 	CodeUniqueViolation
 	CodeQueryError
 	CodeTransactionError
@@ -36,7 +37,6 @@ func (e *AppError) Error() string {
 	if e.Err != nil {
 		return e.Err.Error()
 	}
-
 	return e.Message
 }
 
@@ -49,6 +49,9 @@ func NewAppError(code ErrCode, message string, err error) *AppError {
 }
 
 func (e *HttpError) Error() string {
+	if e.Err != nil {
+		return e.Err.Error()
+	}
 	return e.Message
 }
 
@@ -63,7 +66,10 @@ func NewHttpError(code string, statusCode int, message string, err error) *HttpE
 
 // Transport errors.
 var (
-	ErrUsernameIsRequired = errors.New("username is required")
-	ErrUserIdIsRequired   = errors.New("user_id is required")
-	ErrInvalidParameter   = errors.New("invalid parameter")
+	ErrUsernameIsRequired     = errors.New("username is required")
+	ErrUserIdIsRequired       = errors.New("user_id is required")
+	ErrInvalidParameter       = errors.New("invalid parameter")
+	ErrPageRequiredBeGreater  = errors.New("query parameter 'page' required be greater or equals then 1")
+	ErrLimitRequiredBeGreater = errors.New("query parameter 'limit' required be greater or equals then 1")
+	ErrLimitRequiredBeLess    = errors.New("query parameter 'limit' required be less or equals then 100")
 )

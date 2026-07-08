@@ -1,7 +1,9 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
@@ -29,6 +31,7 @@ func (h *Handler) CreateDirectChat(c *gin.Context) {
 
 	if err := h.messenger.CreateDirectChat(c.Request.Context(), chat); err != nil {
 		c.Error(err)
+		return
 	}
 
 	resp := &dto.DirectChatResp{
@@ -72,6 +75,116 @@ func (h *Handler) CreateGroupChat(c *gin.Context) {
 		OwnerID:        chat.OwnerID,
 	}
 	c.JSON(http.StatusCreated, resp)
+}
+
+// GetChatsByUserID gets chat by user_id with limits and pages
+func (h *Handler) GetChatsByUserID(c *gin.Context) {
+	userIdParam := c.Param("user_id")
+	if userIdParam == "" {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "bad_request",
+			Message:    errs.ErrUserIdIsRequired.Error(),
+			Err:        errs.ErrUserIdIsRequired,
+		})
+		return
+	}
+
+	userID, err := strconv.ParseInt(userIdParam, 10, 64)
+	if err != nil {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "bad_request",
+			Message:    "failed to convert parameter 'user_id' to int64",
+			Err:        fmt.Errorf("failed to convert parameter 'user_id' to int64: %v", err),
+		})
+		return
+	}
+
+	pageQuery := c.Query("page")
+	var page int
+	if pageQuery == "" {
+		page = 1
+	} else {
+		var err error
+		page, err = strconv.Atoi(pageQuery)
+		if err != nil {
+			c.Error(&errs.HttpError{
+				StatusCode: http.StatusBadRequest,
+				Code:       "bad_request",
+				Message:    "failed to convert query parameter 'page' to positive int",
+				Err:        fmt.Errorf("failed to convert query parameter 'page' to int: %v", err),
+			})
+			return
+		}
+
+		if page < 1 {
+			c.Error(&errs.HttpError{
+				StatusCode: http.StatusBadRequest,
+				Code:       "bad_request",
+				Message:    errs.ErrPageRequiredBeGreater.Error(),
+				Err:        errs.ErrPageRequiredBeGreater,
+			})
+			return
+		}
+	}
+
+	limitQuery := c.Query("limit")
+	var limit int
+	if limitQuery == "" {
+		limit = 100
+	} else {
+		var err error
+		limit, err = strconv.Atoi(limitQuery)
+		if err != nil {
+			c.Error(&errs.HttpError{
+				StatusCode: http.StatusBadRequest,
+				Code:       "bad_request",
+				Message:    "failed to convert query parameter 'limit' to positive int",
+				Err:        fmt.Errorf("failed to convert query parameter 'limit' to int: %v", err),
+			})
+			return
+		}
+
+		if limit < 1 {
+			c.Error(&errs.HttpError{
+				StatusCode: http.StatusBadRequest,
+				Code:       "bad_request",
+				Message:    errs.ErrLimitRequiredBeGreater.Error(),
+				Err:        errs.ErrLimitRequiredBeGreater,
+			})
+			return
+		}
+
+		if limit > 100 {
+			c.Error(&errs.HttpError{
+				StatusCode: http.StatusBadRequest,
+				Code:       "bad_request",
+				Message:    errs.ErrLimitRequiredBeLess.Error(),
+				Err:        errs.ErrLimitRequiredBeLess,
+			})
+			return
+		}
+	}
+
+	offset := (page - 1) * limit
+
+	chats, err := h.messenger.GetChatsByUserID(c.Request.Context(), userID, limit, offset)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	if len(chats) == 0 {
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	resp := &dto.ChatsResp{
+		Chats: chats,
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 // SendMessage sends message into target chat.
