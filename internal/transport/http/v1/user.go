@@ -52,7 +52,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 
 // RegisterUser register user by username and details about user.
 func (h *Handler) UpdateUser(c *gin.Context) {
-	userIdParam := c.Param("id")
+	userIdParam := c.Param("user_id")
 	if userIdParam == "" {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
@@ -144,7 +144,44 @@ func (h *Handler) GetUserDataByUsername(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-//GetUserDataByUserID gets all data about user from the messenger database by user_id.
-func (h* Handler )GetUserDataByUserID(c *gin.Context) {
-	
+// GetUserDataByUserID gets all data about user from the messenger database by user_id.
+func (h *Handler) GetUserDataByUserID(c *gin.Context) {
+	userIdParam := c.Param("user_id")
+	if userIdParam == "" {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "BAD_REQUEST",
+			Message:    errs.ErrUserIdIsRequired.Error(),
+			Err:        errs.ErrUserIdIsRequired,
+		})
+		return
+	}
+
+	userID, err := strconv.Atoi(userIdParam)
+	if err != nil {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "BAD_REQUEST",
+			Message:    errs.ErrInvalidParameter.Error(),
+			Err:        err,
+		})
+		return
+	}
+
+	user, err := h.messenger.GetUserDataByUserID(c.Request.Context(), int64(userID))
+	if err != nil {
+		c.Error(err)
+	}
+
+	resp := &dto.UserDataResp{
+		UserID:    user.UserID,
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		BirthDate: user.BirthDate,
+		Gender:    user.Gender,
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
