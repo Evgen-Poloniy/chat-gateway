@@ -28,6 +28,6 @@ type Chat struct {
 	Name        *string   `db:"name"`
 	Title       *string   `db:"title"`
 	Description *string   `db:"description"`
-	CreatedAt   time.Time `db:"create_at"`
+	CreatedAt   time.Time `db:"created_at"`
 	OwnerID     *int64    `db:"owner_id"`
 }

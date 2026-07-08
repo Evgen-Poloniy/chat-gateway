@@ -2,6 +2,7 @@ package pg_test
 
 import (
 	"context"
+	"errors"
 	"regexp"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_CreateDirectChat(t *testing.T) {
@@ -152,6 +154,88 @@ func Test_CreateGroupChat(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, int64(2), tt.input.ChatID)
 				assert.Equal(t, now, tt.input.CreatedAt)
+			}
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func Test_GetChatsByUserID(t *testing.T) {
+	now := time.Now()
+
+	query := `
+        SELECT
+            c.id,
+            c.type,
+            c.name,
+            c.title,
+            c.description,
+            c.created_at,
+            c.owner_id
+        FROM chat_members cm
+        JOIN chats c ON cm.chat_id = c.id
+        WHERE cm.user_id = $1
+        LIMIT $2 OFFSET $3`
+
+	tests := []struct {
+		name    string
+		userID  int64
+		limit   int
+		offset  int
+		mock    func(mock sqlmock.Sqlmock)
+		wantErr bool
+	}{
+		{
+			name:   "Success",
+			userID: 1,
+			limit:  10,
+			offset: 0,
+			mock: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"id", "type", "name", "title", "description", "created_at", "owner_id"}).
+					AddRow(int64(5), "group", "group", nil, nil, now, int64(1))
+
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WithArgs(int64(1), 10, 0).
+					WillReturnRows(rows)
+			},
+			wantErr: false,
+		},
+		{
+			name:   "Query Error",
+			userID: 1,
+			limit:  10,
+			offset: 0,
+			mock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WithArgs(int64(1), 10, 0).
+					WillReturnError(errors.New("db query failed"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			repo := pg.NewPostgresRepository(db)
+			tt.mock(mock)
+
+			chats, err := repo.GetChatsByUserID(context.Background(), tt.userID, tt.limit, tt.offset)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, chats)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, chats)
+				require.Len(t, chats, 1)
+
+				assert.Equal(t, int64(5), chats[0].ChatID)
+				assert.Equal(t, "group", chats[0].ChatType)
+				assert.Equal(t, "group", *chats[0].Name)
 			}
 
 			assert.NoError(t, mock.ExpectationsWereMet())
