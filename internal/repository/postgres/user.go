@@ -16,18 +16,48 @@ import (
 // GetUserDataByUsername gets all data about user from the messenger database.
 func (p *PostgresRepository) GetUserDataByUsername(ctx context.Context, username string) (*entity.User, error) {
 	query := `
-        SELECT id, username, email, first_name, last_name, birth_date, created_at, gender
+        SELECT *
         FROM users
         WHERE username = $1`
 
 	var user entity.User
 
-	if err := p.db.GetContext(ctx, &user, query); err != nil {
+	if err := p.db.GetContext(ctx, &user, query, username); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.NewAppError(
 				"NOT_FOUND",
 				fmt.Sprintf("database error: record with username '%s' not found", username),
 				fmt.Sprintf("database error: record with username '%s' not found", username),
+				errs.ErrRecordNotFound,
+			)
+		}
+
+		return nil, errs.NewAppError(
+			"QUERY_ERROR",
+			"database error: query error",
+			fmt.Sprintf("database error: %v", err),
+			errs.ErrQuery,
+		)
+	}
+
+	return &user, nil
+}
+
+// GetUserDataByUserID gets all data about user from the messenger database by user_id.
+func (p *PostgresRepository) GetUserDataByUserID(ctx context.Context, userID int64) (*entity.User, error) {
+	query := `
+        SELECT *
+        FROM users
+        WHERE id = $1`
+
+	var user entity.User
+
+	if err := p.db.GetContext(ctx, &user, query, userID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.NewAppError(
+				"NOT_FOUND",
+				fmt.Sprintf("database error: record with user_id '%d' not found", userID),
+				fmt.Sprintf("database error: record with user_id '%d' not found", userID),
 				errs.ErrRecordNotFound,
 			)
 		}

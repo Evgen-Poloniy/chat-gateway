@@ -112,7 +112,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// GetUserDataByUsername gets all data about user from the messenger database.
+// GetUserDataByUsername represents searching all data about user from the messenger database.
 func (h *Handler) GetUserDataByUsername(c *gin.Context) {
 	username := c.Param("username")
 	if username == "" {
@@ -142,4 +142,9 @@ func (h *Handler) GetUserDataByUsername(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+//GetUserDataByUserID gets all data about user from the messenger database by user_id.
+func (h* Handler )GetUserDataByUserID(c *gin.Context) {
+	
 }
