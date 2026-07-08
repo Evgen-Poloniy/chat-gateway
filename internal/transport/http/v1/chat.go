@@ -34,11 +34,11 @@ func (h *Handler) CreateDirectChat(c *gin.Context) {
 		return
 	}
 
-	resp := &dto.DirectChatResp{
+	resp := dto.DirectChatResp{
 		ChatID:    chat.ChatID,
 		CreatedAt: chat.CreatedAt,
 	}
-	c.JSON(http.StatusCreated, resp)
+	c.JSON(http.StatusCreated, dto.DataResp{Data: resp})
 }
 
 // CreateGroupChat create group chat into the messenger database.
@@ -65,7 +65,7 @@ func (h *Handler) CreateGroupChat(c *gin.Context) {
 		c.Error(err)
 	}
 
-	resp := &dto.GroupChatResp{
+	resp := dto.GroupChatResp{
 		ChatID:         chat.ChatID,
 		ParticipantIDs: chat.ParticipantIDs,
 		Name:           chat.Name,
@@ -74,7 +74,7 @@ func (h *Handler) CreateGroupChat(c *gin.Context) {
 		CreatedAt:      chat.CreatedAt,
 		OwnerID:        chat.OwnerID,
 	}
-	c.JSON(http.StatusCreated, resp)
+	c.JSON(http.StatusCreated, dto.DataResp{Data: resp})
 }
 
 // GetChatsByUserID gets chat by user_id with limits and pages
@@ -180,11 +180,11 @@ func (h *Handler) GetChatsByUserID(c *gin.Context) {
 		return
 	}
 
-	resp := &dto.ChatsResp{
+	resp := dto.ChatsResp{
 		Chats: chats,
 	}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
 }
 
 // SendMessage sends message into target chat.
@@ -204,11 +204,11 @@ func (h *Handler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	resp := &dto.SendMessageResp{
+	resp := dto.SendMessageResp{
 		ChatID:   req.ChatID,
 		SenderID: req.SenderID,
 		Status:   "sended",
 	}
 
-	c.JSON(http.StatusAccepted, resp)
+	c.JSON(http.StatusAccepted, dto.DataResp{Data: resp})
 }

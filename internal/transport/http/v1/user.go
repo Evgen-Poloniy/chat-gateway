@@ -38,7 +38,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		c.Error(err)
 	}
 
-	resp := &dto.UserDataResp{
+	resp := dto.UserDataResp{
 		UserID:    user.UserID,
 		Username:  user.Username,
 		Email:     user.Email,
@@ -48,7 +48,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		Gender:    user.Gender,
 	}
 
-	c.JSON(http.StatusCreated, resp)
+	c.JSON(http.StatusCreated, dto.DataResp{Data: resp})
 }
 
 // RegisterUser register user by username and details about user.
@@ -100,7 +100,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		c.Error(err)
 	}
 
-	resp := &dto.UserDataResp{
+	resp := dto.UserDataResp{
 		UserID:    user.UserID,
 		Username:  *user.Username,
 		Email:     user.Email,
@@ -110,7 +110,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		Gender:    user.Gender,
 	}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
 }
 
 // GetUserDataByUsername represents searching all data about user from the messenger database.
@@ -132,7 +132,7 @@ func (h *Handler) GetUserDataByUsername(c *gin.Context) {
 		return
 	}
 
-	resp := &dto.UserDataResp{
+	resp := dto.UserDataResp{
 		UserID:    user.UserID,
 		Username:  user.Username,
 		Email:     user.Email,
@@ -142,7 +142,7 @@ func (h *Handler) GetUserDataByUsername(c *gin.Context) {
 		Gender:    user.Gender,
 	}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
 }
 
 // GetUserDataByUserID gets all data about user from the messenger database by user_id.
@@ -174,7 +174,7 @@ func (h *Handler) GetUserDataByUserID(c *gin.Context) {
 		c.Error(err)
 	}
 
-	resp := &dto.UserDataResp{
+	resp := dto.UserDataResp{
 		UserID:    user.UserID,
 		Username:  user.Username,
 		Email:     user.Email,
@@ -184,5 +184,5 @@ func (h *Handler) GetUserDataByUserID(c *gin.Context) {
 		Gender:    user.Gender,
 	}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
 }
