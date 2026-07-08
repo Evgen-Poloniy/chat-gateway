@@ -16,10 +16,9 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.
 	tx, err := p.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return errs.NewAppError(
-			"TRANSACTION_ERROR",
+			errs.CodeTransactionError,
 			"database error: failed to begin transaction",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrFailedToBeginTransaction,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 	defer tx.Rollback()
@@ -34,19 +33,17 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 			if pgErr.Code == "23505" {
 				return errs.NewAppError(
-					"UNIQUE_VIOLATION",
+					errs.CodeUniqueViolation,
 					"database error: "+pgErr.Message,
-					fmt.Sprintf("database error: %s", pgErr.Detail),
-					errs.ErrUniqueViolation,
+					fmt.Errorf("database error: %s", pgErr.Detail),
 				)
 			}
 		}
 
 		return errs.NewAppError(
-			"QUERY_ERROR",
+			errs.CodeQueryError,
 			"database error: failed to insert values into table",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrQuery,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 
@@ -57,19 +54,17 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.
 	_, err = tx.ExecContext(ctx, membersQuery, chat.ChatID, chat.SenderID, chat.RecipientID)
 	if err != nil {
 		return errs.NewAppError(
-			"QUERY_ERROR",
+			errs.CodeQueryError,
 			"database error: failed to insert values into table",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrQuery,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 
 	if err := tx.Commit(); err != nil {
 		return errs.NewAppError(
-			"TRANSACTION_ERROR",
+			errs.CodeTransactionError,
 			"database error: failed to commit transaction",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrFailedToCommitTransaction,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 
@@ -81,10 +76,9 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.G
 	tx, err := p.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return errs.NewAppError(
-			"TRANSACTION_ERROR",
+			errs.CodeTransactionError,
 			"database error: failed to begin transaction",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrFailedToBeginTransaction,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 	defer tx.Rollback()
@@ -101,19 +95,17 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.G
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 			if pgErr.Code == "23505" {
 				return errs.NewAppError(
-					"UNIQUE_VIOLATION",
+					errs.CodeUniqueViolation,
 					"database error: "+pgErr.Message,
-					fmt.Sprintf("database error: %s", pgErr.Detail),
-					errs.ErrUniqueViolation,
+					fmt.Errorf("database error: %s", pgErr.Detail),
 				)
 			}
 		}
 
 		return errs.NewAppError(
-			"QUERY_ERROR",
+			errs.CodeQueryError,
 			"database error: failed to insert values into table",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrQuery,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 
@@ -132,19 +124,17 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.G
 	_, err = tx.ExecContext(ctx, membersQuery, args...)
 	if err != nil {
 		return errs.NewAppError(
-			"QUERY_ERROR",
+			errs.CodeQueryError,
 			"database error: failed to insert values into table",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrQuery,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 
 	if err := tx.Commit(); err != nil {
 		return errs.NewAppError(
-			"TRANSACTION_ERROR",
+			errs.CodeTransactionError,
 			"database error: failed to commit transaction",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrFailedToCommitTransaction,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 

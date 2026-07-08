@@ -44,34 +44,57 @@ func ErrorHandler() gin.HandlerFunc {
 			code = httpError.Code
 			message = httpError.Message
 		} else if appError, ok := errors.AsType[*errs.AppError](err); ok {
-			if errors.Is(appError.Err, errs.ErrRecordNotFound) {
+			switch appError.Code {
+			case errs.CodeUserNotFound:
 				statusCode = http.StatusNotFound
-			} else if errors.Is(appError.Err, errs.ErrQuery) {
-				statusCode = http.StatusInternalServerError
-			} else if errors.Is(appError.Err, errs.ErrUniqueViolation) {
+				code = "user_not_found"
+
+			case errs.CodeChatNotFound:
+				statusCode = http.StatusNotFound
+				code = "chat_not_found"
+
+			case errs.CodeUniqueViolation:
+				statusCode = http.StatusConflict
+				code = "unique_violation"
+
+			case errs.CodeUsernameIsRequired:
 				statusCode = http.StatusBadRequest
-			} else if errors.Is(appError.Err, errs.ErrFailedToBeginTransaction) {
+				code = "username_is_required"
+
+			case errs.CodeUserIdIsRequired:
+				statusCode = http.StatusBadRequest
+				code = "user_id_is_required"
+
+			case errs.CodeInvalidParameter:
+				statusCode = http.StatusBadRequest
+				code = "invalid_parameter"
+
+			case errs.CodeQueryError:
 				statusCode = http.StatusInternalServerError
-			} else if errors.Is(appError.Err, errs.ErrFailedToCommitTransaction) {
+				code = "database_query_error"
+
+			case errs.CodeTransactionError:
 				statusCode = http.StatusInternalServerError
-			} else {
+				code = "database_transaction_error"
+
+			case errs.CodeSerializationError, errs.CodeDeserializationError:
 				statusCode = http.StatusInternalServerError
+				code = "internal_server_error"
+
+			default:
+				statusCode = http.StatusInternalServerError
+				code = "unknown_error"
 			}
-			code = appError.Code
+
 			message = appError.Message
-			c.Error(errors.New(appError.Details))
-		} else if errors.Is(err, errs.ErrRecordNotFound) {
-			statusCode = http.StatusNotFound
-			code = "RECORD_NOT_FOUND"
-			message = err.Error()
 		} else {
 			statusCode = http.StatusInternalServerError
-			code = "UNKNOWN_ERROR"
+			code = "unknown error"
 			message = "unknown error"
-			c.Error(errors.New("unknown error"))
+			c.Error(err)
 		}
 
-		c.Set("status_code", statusCode)
+		c.Status(statusCode)
 		c.Set("code", code)
 
 		c.JSON(statusCode, dto.ResponseError{

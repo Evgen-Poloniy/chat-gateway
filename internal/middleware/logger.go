@@ -25,12 +25,9 @@ func Logger(logger *logrus.Logger) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
 
-			if val, exists := c.Get("status_code"); exists {
-				if v, ok := val.(int); ok {
-					statusCode = v
-					entry = entry.WithField("status_code", statusCode)
-				}
-			}
+			statusCode = c.Writer.Status()
+			entry = entry.WithField("status_code", statusCode)
+
 			if val, exists := c.Get("code"); exists {
 				if v, ok := val.(string); ok {
 					entry = entry.WithField("code", v)
@@ -46,16 +43,7 @@ func Logger(logger *logrus.Logger) gin.HandlerFunc {
 			return
 		}
 
-		switch {
-		case statusCode >= 500:
-			entry.Error("request start with error")
-			return
-		case statusCode >= 400:
-			entry.Warn("request start with warning")
-			return
-		default:
-			entry.Info("request start")
-		}
+		entry.Info("request start")
 
 		start := time.Now()
 
@@ -76,12 +64,6 @@ func Logger(logger *logrus.Logger) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
 
-			if val, exists := c.Get("status_code"); exists {
-				if v, ok := val.(int); ok {
-					statusCode = v
-					entry = entry.WithField("status_code", statusCode)
-				}
-			}
 			if val, exists := c.Get("code"); exists {
 				if v, ok := val.(string); ok {
 					entry = entry.WithField("code", v)

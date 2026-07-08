@@ -16,10 +16,9 @@ func (k *KafkaRepository) SendMessage(message *dto.SendMessageReq) error {
 	values, err := json.Marshal(message)
 	if err != nil {
 		return errs.NewAppError(
-			"SERIALIZATION_ERROR",
+			errs.CodeSerializationError,
 			"message broker error: failed to serialize incoming message data",
-			fmt.Sprintf("message broker error: %v", err),
-			errs.ErrSerialization,
+			fmt.Errorf("message broker error: %v", err),
 		)
 	}
 

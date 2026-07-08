@@ -2,11 +2,25 @@ package errs
 
 import "errors"
 
+type ErrCode int
+
+const (
+	CodeUserNotFound ErrCode = iota
+	CodeChatNotFound
+	CodeUniqueViolation
+	CodeQueryError
+	CodeTransactionError
+	CodeSerializationError
+	CodeDeserializationError
+	CodeUsernameIsRequired
+	CodeUserIdIsRequired
+	CodeInvalidParameter
+)
+
 // App error
 type AppError struct {
-	Code    string
+	Code    ErrCode
 	Message string
-	Details string
 	Err     error
 }
 
@@ -19,14 +33,17 @@ type HttpError struct {
 }
 
 func (e *AppError) Error() string {
+	if e.Err != nil {
+		return e.Err.Error()
+	}
+
 	return e.Message
 }
 
-func NewAppError(code, message, details string, err error) *AppError {
+func NewAppError(code ErrCode, message string, err error) *AppError {
 	return &AppError{
 		Code:    code,
 		Message: message,
-		Details: details,
 		Err:     err,
 	}
 }
@@ -43,17 +60,6 @@ func NewHttpError(code string, statusCode int, message string, err error) *HttpE
 		Err:        err,
 	}
 }
-
-// Repository errors.
-var (
-	ErrQuery                     = errors.New("database query error")
-	ErrRecordNotFound            = errors.New("record not found")
-	ErrUniqueViolation           = errors.New("inserted value must be unique")
-	ErrFailedToBeginTransaction  = errors.New("failed to begin transaction")
-	ErrFailedToCommitTransaction = errors.New("failed to commit transaction")
-	ErrSerialization             = errors.New("serialization error")
-	ErrDeserialization           = errors.New("deserialization error")
-)
 
 // Transport errors.
 var (

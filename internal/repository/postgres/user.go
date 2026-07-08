@@ -25,18 +25,16 @@ func (p *PostgresRepository) GetUserDataByUsername(ctx context.Context, username
 	if err := p.db.GetContext(ctx, &user, query, username); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.NewAppError(
-				"NOT_FOUND",
+				errs.CodeUserNotFound,
 				fmt.Sprintf("database error: record with username '%s' not found", username),
-				fmt.Sprintf("database error: record with username '%s' not found", username),
-				errs.ErrRecordNotFound,
+				fmt.Errorf("database error: %v", err),
 			)
 		}
 
 		return nil, errs.NewAppError(
-			"QUERY_ERROR",
+			errs.CodeQueryError,
 			"database error: query error",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrQuery,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 
@@ -55,18 +53,16 @@ func (p *PostgresRepository) GetUserDataByUserID(ctx context.Context, userID int
 	if err := p.db.GetContext(ctx, &user, query, userID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.NewAppError(
-				"NOT_FOUND",
+				errs.CodeUserNotFound,
 				fmt.Sprintf("database error: record with user_id '%d' not found", userID),
-				fmt.Sprintf("database error: record with user_id '%d' not found", userID),
-				errs.ErrRecordNotFound,
+				fmt.Errorf("database error: %v", err),
 			)
 		}
 
 		return nil, errs.NewAppError(
-			"QUERY_ERROR",
+			errs.CodeQueryError,
 			"database error: query error",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrQuery,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 
@@ -86,19 +82,17 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) 
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 			if pgErr.Code == "23505" {
 				return errs.NewAppError(
-					"UNIQUE_VIOLATION",
+					errs.CodeUniqueViolation,
 					"database error: "+pgErr.Message,
-					fmt.Sprintf("database error: %s", pgErr.Detail),
-					errs.ErrUniqueViolation,
+					fmt.Errorf("database error: %s", pgErr.Detail),
 				)
 			}
 		}
 
 		return errs.NewAppError(
-			"QUERY_ERROR",
+			errs.CodeQueryError,
 			"database error: failed to insert values into table",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrQuery,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 	defer rows.Close()
@@ -107,14 +101,17 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) 
 		err = rows.Scan(&user.UserID, &user.CreatedAt)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				return errs.ErrRecordNotFound
+				return errs.NewAppError(
+					errs.CodeUserNotFound,
+					fmt.Sprintf("database error: record with username '%s' not found", user.Username),
+					fmt.Errorf("database error: %v", err),
+				)
 			}
 
 			return errs.NewAppError(
-				"QUERY_ERROR",
+				errs.CodeQueryError,
 				"database error: failed to scan rows",
-				fmt.Sprintf("database error: %v", err),
-				errs.ErrQuery,
+				fmt.Errorf("database error: %v", err),
 			)
 		}
 
@@ -123,18 +120,16 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *entity.User) 
 
 	if err = rows.Err(); err != nil {
 		return errs.NewAppError(
-			"QUERY_ERROR",
+			errs.CodeQueryError,
 			"database error: rows error",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrQuery,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 
 	return errs.NewAppError(
-		"NOT_FOUND",
-		"database error: record not found",
-		"database error: record not found",
-		errs.ErrRecordNotFound,
+		errs.CodeUserNotFound,
+		fmt.Sprintf("database error: record with username '%s' not found", user.Username),
+		fmt.Errorf("database error: %v", err),
 	)
 }
 
@@ -156,19 +151,17 @@ func (p *PostgresRepository) UpdateUser(ctx context.Context, user *entity.Update
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 			if pgErr.Code == "23505" {
 				return errs.NewAppError(
-					"UNIQUE_VIOLATION",
+					errs.CodeUniqueViolation,
 					"database error: "+pgErr.Message,
-					fmt.Sprintf("database error: %s", pgErr.Detail),
-					errs.ErrUniqueViolation,
+					fmt.Errorf("database error: %s", pgErr.Detail),
 				)
 			}
 		}
 
 		return errs.NewAppError(
-			"QUERY_ERROR",
+			errs.CodeQueryError,
 			"database error: failed to insert values into table",
-			fmt.Sprintf("database error: %v", err),
-			errs.ErrQuery,
+			fmt.Errorf("database error: %v", err),
 		)
 	}
 
