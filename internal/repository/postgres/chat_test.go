@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_CreateDirectChat(t *testing.T) {
+func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
@@ -91,7 +91,7 @@ func Test_CreateDirectChat(t *testing.T) {
 	}
 }
 
-func Test_CreateGroupChat(t *testing.T) {
+func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
@@ -161,7 +161,7 @@ func Test_CreateGroupChat(t *testing.T) {
 	}
 }
 
-func Test_GetChatsByUserID(t *testing.T) {
+func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 	now := time.Now()
 
 	query := `

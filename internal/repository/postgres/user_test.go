@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_GetUserDataByUsername(t *testing.T) {
+func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
 	now := time.Now()
 	username := "testuser"
 
@@ -91,7 +91,7 @@ func Test_GetUserDataByUsername(t *testing.T) {
 	}
 }
 
-func Test_GetUserDataByUserID(t *testing.T) {
+func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 	now := time.Now()
 	var userID int64 = 1
 
@@ -166,7 +166,7 @@ func Test_GetUserDataByUserID(t *testing.T) {
 	}
 }
 
-func Test_CreateUser(t *testing.T) {
+func TestPostgresRepository_CreateUser(t *testing.T) {
 	now := time.Now()
 
 	query := `INSERT INTO users (username, email, first_name, last_name, birth_date, gender) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, created_at`
@@ -257,7 +257,7 @@ func Test_CreateUser(t *testing.T) {
 	}
 }
 
-func Test_UpdateUser(t *testing.T) {
+func TestPostgresRepository_UpdateUser(t *testing.T) {
 	now := time.Now()
 
 	expectedQuery := `UPDATE users SET username = COALESCE(?, username), email = COALESCE(?, email), first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), birth_date = COALESCE(?, birth_date), gender = COALESCE(?, gender) WHERE id = ?`
