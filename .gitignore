@@ -2,3 +2,4 @@
 .env
 config.yaml
 coverage.out
+bin
