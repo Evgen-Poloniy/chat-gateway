@@ -27,7 +27,7 @@ func (p *PostgresRepository) GetUserDataByUsername(ctx context.Context, username
 			return nil, errs.NewAppError(
 				errs.CodeUserNotFound,
 				fmt.Sprintf("database error: record with username '%s' not found", username),
-				fmt.Errorf("database error: %v", err),
+				fmt.Errorf("database error: record with username '%s' not found", username),
 			)
 		}
 
@@ -55,7 +55,7 @@ func (p *PostgresRepository) GetUserDataByUserID(ctx context.Context, userID int
 			return nil, errs.NewAppError(
 				errs.CodeUserNotFound,
 				fmt.Sprintf("database error: record with user_id '%d' not found", userID),
-				fmt.Errorf("database error: %v", err),
+				fmt.Errorf("database error: record with user_id '%d' not found", userID),
 			)
 		}
 
@@ -132,6 +132,14 @@ func (p *PostgresRepository) UpdateUser(ctx context.Context, user *model.UpdateU
 	}
 
 	if err := p.db.QueryRowxContext(ctx, boundQuery, args...).Scan(&user.CreatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errs.NewAppError(
+				errs.CodeUserNotFound,
+				fmt.Sprintf("database error: record with user_id '%d' not found", user.UserID),
+				fmt.Errorf("database error: record with user_id '%d' not found", user.UserID),
+			)
+		}
+
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 			if pgErr.Code == "23505" {
 				return errs.NewAppError(
