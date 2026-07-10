@@ -2,6 +2,7 @@ package pg_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"regexp"
 	"testing"
@@ -234,6 +235,118 @@ func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 				assert.Equal(t, int64(5), chats[0].ChatID)
 				assert.Equal(t, "group", chats[0].ChatType)
 				assert.Equal(t, "group", *chats[0].Name)
+			}
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestPostgresRepository_UpdateChat(t *testing.T) {
+	now := time.Now()
+
+	expectedQuery := `
+		UPDATE chats
+		SET
+			name = COALESCE(?, name),
+			title = COALESCE(?, title),
+			description = COALESCE(?, description),
+			owner_id = CASE
+				WHEN ? IS NULL THEN owner_id
+				WHEN ? = ? THEN owner_id
+				ELSE owner_id
+			END
+		WHERE id = ?
+		RETURNING name, title, description, created_at, owner_id
+	`
+
+	tests := []struct {
+		name    string
+		input   *model.UpdateChat
+		mock    func(mock sqlmock.Sqlmock, chat *model.UpdateChat)
+		wantErr bool
+	}{
+		{
+			name: "Success",
+			input: &model.UpdateChat{
+				ChatID:        10,
+				Name:          ptr("Updated Name"),
+				Title:         ptr("Updated Title"),
+				Description:   ptr("Updated Description"),
+				OwnerID:       ptr(int64(2)),
+				UserIDUpdater: 1,
+			},
+			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateChat) {
+				rows := sqlmock.NewRows([]string{"name", "title", "description", "created_at", "owner_id"}).
+					AddRow(*chat.Name, *chat.Title, *chat.Description, now, *chat.OwnerID)
+
+				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
+					WithArgs(
+						chat.Name,
+						chat.Title,
+						chat.Description,
+						chat.OwnerID,
+						chat.OwnerID,
+						chat.UserIDUpdater,
+						chat.ChatID,
+					).
+					WillReturnRows(rows)
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error - Chat Not Found",
+			input: &model.UpdateChat{
+				ChatID:        404,
+				UserIDUpdater: 1,
+			},
+			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateChat) {
+				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
+					WithArgs(
+						chat.Name, chat.Title, chat.Description,
+						chat.OwnerID, chat.OwnerID, chat.UserIDUpdater, chat.ChatID,
+					).
+					WillReturnError(sql.ErrNoRows)
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error - Unique Violation",
+			input: &model.UpdateChat{
+				ChatID:        10,
+				Name:          ptr("DuplicateName"),
+				UserIDUpdater: 1,
+			},
+			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateChat) {
+				pgErr := &pgconn.PgError{
+					Code:    "23505",
+					Message: "duplicate key value violates unique constraint",
+				}
+				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
+					WithArgs(
+						chat.Name, chat.Title, chat.Description,
+						chat.OwnerID, chat.OwnerID, chat.UserIDUpdater, chat.ChatID,
+					).
+					WillReturnError(pgErr)
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			repo := pg.NewPostgresRepository(db)
+			tt.mock(mock, tt.input)
+
+			err := repo.UpdateChat(context.Background(), tt.input)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 
 			assert.NoError(t, mock.ExpectationsWereMet())
