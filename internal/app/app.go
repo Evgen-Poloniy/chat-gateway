@@ -31,7 +31,7 @@ func Run() {
 		logrus.Fatal("required API_KEY")
 	}
 
-	_, err := bcrypt.GenerateFromPassword([]byte(apiKey), bcrypt.DefaultCost)
+	apiKeyHash, err := bcrypt.GenerateFromPassword([]byte(apiKey), bcrypt.DefaultCost)
 	if err != nil {
 		logrus.Fatalf("error when generation API_KEY hash: %v", err)
 	}
@@ -84,7 +84,7 @@ func Run() {
 	messenger := messenger.NewMessengerService(messengerRepository, messageBroker)
 	router := router.NewRouter(logger, &config.CORS)
 	v1Handler := v1.NewHandler(messenger)
-	v1.NewRouter(router, v1Handler)
+	v1.NewRouter(router, v1Handler, apiKeyHash)
 
 	var wg sync.WaitGroup
 

@@ -68,6 +68,9 @@ func NewHttpError(code string, statusCode int, message string, err error) *HttpE
 
 // Transport errors.
 var (
+	ErrMissingAuthHeader      = errors.New("missing authentication header")
+	ErrWrongAuthHeader        = errors.New("wrong authentication header")
+	ErrInvalidAPIKey          = errors.New("invalid API-Key")
 	ErrUsernameIsRequired     = errors.New("username is required")
 	ErrUserIdIsRequired       = errors.New("user_id is required")
 	ErrInvalidParameter       = errors.New("invalid parameter")
