@@ -34,6 +34,10 @@ cover-html:
 	go tool cover -html=coverage.out
 .PHONY: cover-html
 
+mock:
+	go generate ./...
+.PHONY: mock
+
 swag-init:
 	swag init -g internal/app/app.go
 .PHONY: swag-init
