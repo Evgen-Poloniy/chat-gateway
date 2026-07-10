@@ -280,12 +280,15 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 				Gender:    ptr("male"),
 			},
 			mock: func(mock sqlmock.Sqlmock, user *model.UpdateUser) {
+				rows := sqlmock.NewRows([]string{"username", "email", "first_name", "last_name", "birth_date", "gender", "created_at"}).
+					AddRow(*user.Username, *user.Email, *user.FirstName, *user.LastName, *user.BirthDate, *user.Gender, now)
+
 				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
 					WithArgs(
 						*user.Username, *user.Email, *user.FirstName,
 						*user.LastName, *user.BirthDate, *user.Gender, user.UserID,
 					).
-					WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow(now))
+					WillReturnRows(rows)
 			},
 			wantErr: false,
 		},

@@ -131,7 +131,7 @@ func (p *PostgresRepository) UpdateUser(ctx context.Context, user *model.UpdateU
 		)
 	}
 
-	if err := p.db.QueryRowxContext(ctx, boundQuery, args...).StructScan(&user); err != nil {
+	if err := p.db.QueryRowxContext(ctx, boundQuery, args...).StructScan(user); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errs.NewAppError(
 				errs.CodeUserNotFound,
