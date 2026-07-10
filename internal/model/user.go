@@ -10,8 +10,8 @@ type User struct {
 	FirstName *string    `db:"first_name"`
 	LastName  *string    `db:"last_name"`
 	BirthDate *time.Time `db:"birth_date"`
-	CreatedAt time.Time  `db:"created_at"`
 	Gender    *string    `db:"gender"`
+	CreatedAt time.Time  `db:"created_at"`
 }
 
 // UpdateUser represents user updating data into messenger.
@@ -22,6 +22,6 @@ type UpdateUser struct {
 	FirstName *string    `db:"first_name"`
 	LastName  *string    `db:"last_name"`
 	BirthDate *time.Time `db:"birth_date"`
-	CreatedAt time.Time  `db:"created_at"`
 	Gender    *string    `db:"gender"`
+	CreatedAt time.Time  `db:"created_at"`
 }

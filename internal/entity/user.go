@@ -12,8 +12,8 @@ type User struct {
 	FirstName *string    `validate:"omitempty,min=1,max=100"`
 	LastName  *string    `validate:"omitempty,min=1,max=100"`
 	BirthDate *time.Time `validate:"omitempty"`
-	CreatedAt time.Time
-	Gender    *string `validate:"omitempty,oneof=man woman"`
+	Gender    *string    `validate:"omitempty,oneof=man woman"`
+	CreatedAt time.Time  `validate:"-"`
 }
 
 // UpdateUser represents user updating data into messenger.
@@ -24,6 +24,6 @@ type UpdateUser struct {
 	FirstName *string    `validate:"omitempty,min=1,max=100"`
 	LastName  *string    `validate:"omitempty,min=1,max=100"`
 	BirthDate *time.Time `validate:"omitempty"`
-	CreatedAt time.Time
-	Gender    *string `validate:"omitempty,oneof=man woman"`
+	Gender    *string    `validate:"omitempty,oneof=man woman"`
+	CreatedAt time.Time  `validate:"-"`
 }

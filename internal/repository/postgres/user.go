@@ -119,7 +119,7 @@ func (p *PostgresRepository) UpdateUser(ctx context.Context, user *model.UpdateU
             birth_date = COALESCE(:birth_date, birth_date),
             gender = COALESCE(:gender, gender)
         WHERE id = :id
-		RETURNING created_at
+		RETURNING username, email, first_name, last_name, birth_date, gender, created_at
     `
 
 	boundQuery, args, err := p.db.BindNamed(query, user)
@@ -131,7 +131,7 @@ func (p *PostgresRepository) UpdateUser(ctx context.Context, user *model.UpdateU
 		)
 	}
 
-	if err := p.db.QueryRowxContext(ctx, boundQuery, args...).Scan(&user.CreatedAt); err != nil {
+	if err := p.db.QueryRowxContext(ctx, boundQuery, args...).StructScan(&user); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errs.NewAppError(
 				errs.CodeUserNotFound,

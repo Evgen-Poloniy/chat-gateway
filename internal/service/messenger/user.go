@@ -89,14 +89,20 @@ func (m *MessengerService) UpdateUser(ctx context.Context, user *entity.UpdateUs
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		BirthDate: user.BirthDate,
-		CreatedAt: user.CreatedAt,
 		Gender:    user.Gender,
+		CreatedAt: user.CreatedAt,
 	}
 
 	if err := m.messengerRepository.UpdateUser(ctx, &userModel); err != nil {
 		return err
 	}
 
+	user.Username = userModel.Username
+	user.Email = userModel.Email
+	user.FirstName = userModel.FirstName
+	user.LastName = userModel.LastName
+	user.BirthDate = userModel.BirthDate
+	user.Gender = userModel.Gender
 	user.CreatedAt = userModel.CreatedAt
 
 	return nil
