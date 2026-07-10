@@ -26,7 +26,7 @@ run:
 .PHONY: run
 
 unit-test:
-	go test -cover -count=1 -v ./internal/repository/postgres/ -coverprofile=coverage.out
+	go test -cover -count=1 -v ./... -coverprofile=coverage.out
 	go tool cover -func=coverage.out
 .PHONY: unit-test
 
