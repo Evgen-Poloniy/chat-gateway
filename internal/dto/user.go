@@ -37,10 +37,11 @@ type UpdateUserResp struct {
 // UserInfo represents DTO response with data about user the messenger database.
 type UserDataResp struct {
 	UserID    int64      `json:"user_id"`
-	Username  string     `json:"username,omitempty"`
+	Username  string     `json:"username"`
 	Email     *string    `json:"email,omitempty"`
 	FirstName *string    `json:"first_name,omitempty"`
 	LastName  *string    `json:"last_name,omitempty"`
 	BirthDate *time.Time `json:"birth_date,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
 	Gender    *string    `json:"gender,omitempty"`
 }

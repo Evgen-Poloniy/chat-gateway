@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // CreateDirectChat accept user IDs and create direct chat.
-func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.DirectChat) error {
+func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *model.DirectChat) error {
 	tx, err := p.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return errs.NewAppError(
@@ -28,8 +28,7 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.
 		VALUES ('direct')
 		RETURNING id, created_at`
 
-	err = tx.QueryRowxContext(ctx, chatQuery).Scan(&chat.ChatID, &chat.CreatedAt)
-	if err != nil {
+	if err = tx.QueryRowxContext(ctx, chatQuery).Scan(&chat.ChatID, &chat.CreatedAt); err != nil {
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 			if pgErr.Code == "23505" {
 				return errs.NewAppError(
@@ -51,7 +50,7 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.
 		INSERT INTO chat_members (chat_id, user_id)
 		VALUES ($1, $2), ($1, $3)`
 
-	_, err = tx.ExecContext(ctx, membersQuery, chat.ChatID, chat.SenderID, chat.RecipientID)
+	_, err = tx.ExecContext(ctx, membersQuery, chat.ChatID, chat.ParticipantIDs[0], chat.ParticipantIDs[1])
 	if err != nil {
 		return errs.NewAppError(
 			errs.CodeQueryError,
@@ -72,7 +71,7 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *entity.
 }
 
 // CreateGroupChat accept user IDs, chat name, chat owner user_id and create group chat between several users.
-func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error {
+func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *model.GroupChat) error {
 	tx, err := p.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return errs.NewAppError(
@@ -93,10 +92,18 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.G
 	).Scan(&chat.ChatID, &chat.CreatedAt)
 	if err != nil {
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
-			if pgErr.Code == "23505" {
+			switch pgErr.Code {
+			case "23505":
 				return errs.NewAppError(
 					errs.CodeUniqueViolation,
 					"database error: "+pgErr.Message,
+					fmt.Errorf("database error: %s", pgErr.Detail),
+				)
+
+			case "23503":
+				return errs.NewAppError(
+					errs.CodeForeignKeyViolation,
+					"database error: owner_id does not exist",
 					fmt.Errorf("database error: %s", pgErr.Detail),
 				)
 			}
@@ -142,7 +149,7 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *entity.G
 }
 
 // GetChatsByUserID gets chat by user_id with limits and offset
-func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]entity.Chat, error) {
+func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]model.Chat, error) {
 	query := `
 		SELECT
 			c.id,
@@ -158,7 +165,7 @@ func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64,
 		LIMIT $2 OFFSET $3
 	`
 
-	var chats []entity.Chat
+	var chats []model.Chat
 
 	err := p.db.SelectContext(ctx, &chats, query, userID, limit, offset)
 	if err != nil {

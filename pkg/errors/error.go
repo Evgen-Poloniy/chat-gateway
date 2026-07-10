@@ -9,6 +9,7 @@ const (
 	CodeChatNotFound
 	CodeUserHaveNotChats
 	CodeUniqueViolation
+	CodeForeignKeyViolation
 	CodeQueryError
 	CodeTransactionError
 	CodeSerializationError
@@ -16,6 +17,7 @@ const (
 	CodeUsernameIsRequired
 	CodeUserIdIsRequired
 	CodeInvalidParameter
+	CodeValidationError
 )
 
 // App error

@@ -45,6 +45,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		BirthDate: user.BirthDate,
+		CreatedAt: user.CreatedAt,
 		Gender:    user.Gender,
 	}
 
@@ -107,6 +108,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		BirthDate: user.BirthDate,
+		CreatedAt: user.CreatedAt,
 		Gender:    user.Gender,
 	}
 
@@ -139,6 +141,7 @@ func (h *Handler) GetUserDataByUsername(c *gin.Context) {
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		BirthDate: user.BirthDate,
+		CreatedAt: user.CreatedAt,
 		Gender:    user.Gender,
 	}
 
@@ -181,6 +184,7 @@ func (h *Handler) GetUserDataByUserID(c *gin.Context) {
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		BirthDate: user.BirthDate,
+		CreatedAt: user.CreatedAt,
 		Gender:    user.Gender,
 	}
 

@@ -1,27 +1,29 @@
 package entity
 
-import "time"
+import (
+	"time"
+)
 
 // User represents user data into messenger.
 type User struct {
-	UserID    int64      `db:"id"`
-	Username  string     `db:"username"`
-	Email     *string    `db:"email"`
-	FirstName *string    `db:"first_name"`
-	LastName  *string    `db:"last_name"`
-	BirthDate *time.Time `db:"birth_date"`
-	CreatedAt *time.Time `db:"created_at"`
-	Gender    *string    `db:"gender"`
+	UserID    int64      `validate:"required,gt=0"`
+	Username  string     `validate:"required,min=3,max=32,alphanum"`
+	Email     *string    `validate:"omitempty,email,max=64"`
+	FirstName *string    `validate:"omitempty,min=1,max=100"`
+	LastName  *string    `validate:"omitempty,min=1,max=100"`
+	BirthDate *time.Time `validate:"omitempty"`
+	CreatedAt time.Time
+	Gender    *string `validate:"omitempty,oneof=man woman"`
 }
 
 // UpdateUser represents user updating data into messenger.
 type UpdateUser struct {
-	UserID    int64      `db:"id"`
-	Username  *string    `db:"username"`
-	Email     *string    `db:"email"`
-	FirstName *string    `db:"first_name"`
-	LastName  *string    `db:"last_name"`
-	BirthDate *time.Time `db:"birth_date"`
-	CreatedAt *time.Time `db:"created_at"`
-	Gender    *string    `db:"gender"`
+	UserID    int64      `validate:"required,gt=0"`
+	Username  *string    `validate:"omitempty,min=3,max=32,alphanum"`
+	Email     *string    `validate:"omitempty,email,max=64"`
+	FirstName *string    `validate:"omitempty,min=1,max=100"`
+	LastName  *string    `validate:"omitempty,min=1,max=100"`
+	BirthDate *time.Time `validate:"omitempty"`
+	CreatedAt time.Time
+	Gender    *string `validate:"omitempty,oneof=man woman"`
 }

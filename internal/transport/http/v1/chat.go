@@ -25,8 +25,7 @@ func (h *Handler) CreateDirectChat(c *gin.Context) {
 	}
 
 	chat := &entity.DirectChat{
-		SenderID:    req.SenderID,
-		RecipientID: req.RecipientID,
+		ParticipantIDs: req.ParticipantIDs,
 	}
 
 	if err := h.messenger.CreateDirectChat(c.Request.Context(), chat); err != nil {
@@ -37,6 +36,7 @@ func (h *Handler) CreateDirectChat(c *gin.Context) {
 	resp := dto.DirectChatResp{
 		ChatID:    chat.ChatID,
 		CreatedAt: chat.CreatedAt,
+		ChatType:  "direct",
 	}
 	c.JSON(http.StatusCreated, dto.DataResp{Data: resp})
 }
@@ -68,6 +68,7 @@ func (h *Handler) CreateGroupChat(c *gin.Context) {
 	resp := dto.GroupChatResp{
 		ChatID:         chat.ChatID,
 		ParticipantIDs: chat.ParticipantIDs,
+		ChatType:       "group",
 		Name:           chat.Name,
 		Title:          chat.Title,
 		Description:    chat.Description,
@@ -199,7 +200,13 @@ func (h *Handler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	if err := h.messenger.SendMessage(&req); err != nil {
+	message := entity.SendMessage{
+		ChatID:   req.ChatID,
+		SenderID: req.SenderID,
+		Message:  req.Message,
+	}
+
+	if err := h.messenger.SendMessage(c.Request.Context(), &message); err != nil {
 		c.Error(err)
 		return
 	}

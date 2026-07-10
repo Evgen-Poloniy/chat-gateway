@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +21,7 @@ func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
 	username := "testuser"
 
 	query := `
-        SELECT *
+        SELECT id, username, email, first_name, last_name, birth_date, created_at, gender
         FROM users
         WHERE username = $1`
 
@@ -96,7 +96,7 @@ func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 	var userID int64 = 1
 
 	query := `
-        SELECT *
+        SELECT id, username, email, first_name, last_name, birth_date, created_at, gender
         FROM users
         WHERE id = $1`
 
@@ -173,13 +173,13 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		input   *entity.User
-		mock    func(mock sqlmock.Sqlmock, user *entity.User)
+		input   *model.User
+		mock    func(mock sqlmock.Sqlmock, user *model.User)
 		wantErr bool
 	}{
 		{
 			name: "Success",
-			input: &entity.User{
+			input: &model.User{
 				Username:  "newuser",
 				Email:     ptr("new@test.com"),
 				FirstName: ptr("New"),
@@ -187,7 +187,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 				BirthDate: &now,
 				Gender:    ptr("female"),
 			},
-			mock: func(mock sqlmock.Sqlmock, user *entity.User) {
+			mock: func(mock sqlmock.Sqlmock, user *model.User) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
 					WithArgs(user.Username, *user.Email, *user.FirstName, *user.LastName, *user.BirthDate, *user.Gender).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(1, now))
@@ -196,7 +196,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 		},
 		{
 			name: "Error - Unique Violation",
-			input: &entity.User{
+			input: &model.User{
 				Username:  "newuser",
 				Email:     ptr("new@test.com"),
 				FirstName: ptr("New"),
@@ -204,7 +204,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 				BirthDate: &now,
 				Gender:    ptr("female"),
 			},
-			mock: func(mock sqlmock.Sqlmock, user *entity.User) {
+			mock: func(mock sqlmock.Sqlmock, user *model.User) {
 				pgErr := &pgconn.PgError{
 					Code:    "23505",
 					Message: "duplicate key value violates unique constraint",
@@ -217,7 +217,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 		},
 		{
 			name: "Error - Query Failed",
-			input: &entity.User{
+			input: &model.User{
 				Username:  "newuser",
 				Email:     ptr("new@test.com"),
 				FirstName: ptr("New"),
@@ -225,7 +225,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 				BirthDate: &now,
 				Gender:    ptr("female"),
 			},
-			mock: func(mock sqlmock.Sqlmock, user *entity.User) {
+			mock: func(mock sqlmock.Sqlmock, user *model.User) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
 					WithArgs(user.Username, *user.Email, *user.FirstName, *user.LastName, *user.BirthDate, *user.Gender).
 					WillReturnError(errors.New("generic db error"))
@@ -264,13 +264,13 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		input   *entity.UpdateUser
-		mock    func(mock sqlmock.Sqlmock, user *entity.UpdateUser)
+		input   *model.UpdateUser
+		mock    func(mock sqlmock.Sqlmock, user *model.UpdateUser)
 		wantErr bool
 	}{
 		{
 			name: "Success",
-			input: &entity.UpdateUser{
+			input: &model.UpdateUser{
 				UserID:    1,
 				Username:  ptr("updateduser"),
 				Email:     ptr("updated@test.com"),
@@ -279,19 +279,19 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 				BirthDate: &now,
 				Gender:    ptr("male"),
 			},
-			mock: func(mock sqlmock.Sqlmock, user *entity.UpdateUser) {
-				mock.ExpectExec(regexp.QuoteMeta(expectedQuery)).
+			mock: func(mock sqlmock.Sqlmock, user *model.UpdateUser) {
+				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
 					WithArgs(
 						*user.Username, *user.Email, *user.FirstName,
 						*user.LastName, *user.BirthDate, *user.Gender, user.UserID,
 					).
-					WillReturnResult(sqlmock.NewResult(1, 1))
+					WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow(now))
 			},
 			wantErr: false,
 		},
 		{
 			name: "Error - Unique Violation",
-			input: &entity.UpdateUser{
+			input: &model.UpdateUser{
 				UserID:    1,
 				Username:  ptr("updateduser"),
 				Email:     ptr("updated@test.com"),
@@ -300,12 +300,12 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 				BirthDate: &now,
 				Gender:    ptr("male"),
 			},
-			mock: func(mock sqlmock.Sqlmock, user *entity.UpdateUser) {
+			mock: func(mock sqlmock.Sqlmock, user *model.UpdateUser) {
 				pgErr := &pgconn.PgError{
 					Code:    "23505",
 					Message: "duplicate key value violates unique constraint",
 				}
-				mock.ExpectExec(regexp.QuoteMeta(expectedQuery)).
+				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
 					WithArgs(
 						*user.Username, *user.Email, *user.FirstName,
 						*user.LastName, *user.BirthDate, *user.Gender, user.UserID,
@@ -316,7 +316,7 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 		},
 		{
 			name: "Error - Query Failed",
-			input: &entity.UpdateUser{
+			input: &model.UpdateUser{
 				UserID:    1,
 				Username:  ptr("updateduser"),
 				Email:     ptr("updated@test.com"),
@@ -325,8 +325,8 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 				BirthDate: &now,
 				Gender:    ptr("male"),
 			},
-			mock: func(mock sqlmock.Sqlmock, user *entity.UpdateUser) {
-				mock.ExpectExec(regexp.QuoteMeta(expectedQuery)).
+			mock: func(mock sqlmock.Sqlmock, user *model.UpdateUser) {
+				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
 					WithArgs(
 						*user.Username, *user.Email, *user.FirstName,
 						*user.LastName, *user.BirthDate, *user.Gender, user.UserID,

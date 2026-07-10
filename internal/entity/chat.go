@@ -4,30 +4,36 @@ import "time"
 
 // DirectChat represents database model for creating direct chat.
 type DirectChat struct {
-	ChatID      int64
-	SenderID    int64
-	RecipientID int64
-	CreatedAt   time.Time
+	ChatID         int64     `validate:"required,gt=0"`
+	ParticipantIDs []int64   `validate:"required,len=2,dive,gt=0"`
+	CreatedAt      time.Time `validate:"structonly"`
 }
 
-// GroupChat represents database model for creating direct chat.
+// GroupChat represents database model for creating group chat.
 type GroupChat struct {
-	ChatID         int64
-	ParticipantIDs []int64
-	Name           string
-	Title          *string
-	Description    *string
-	CreatedAt      time.Time
-	OwnerID        int64
+	ChatID         int64     `validate:"required,gt=0"`
+	ParticipantIDs []int64   `validate:"required,min=2,dive,gt=0"`
+	Name           string    `validate:"required,min=1,max=64"`
+	Title          *string   `validate:"omitempty,max=64"`
+	Description    *string   `validate:"omitempty,max=255"`
+	CreatedAt      time.Time `validate:"structonly"`
+	OwnerID        int64     `validate:"required,gt=0"`
 }
 
 // Chat represents model of chat
 type Chat struct {
-	ChatID      int64     `db:"id"`
-	ChatType    string    `db:"type"`
-	Name        *string   `db:"name"`
-	Title       *string   `db:"title"`
-	Description *string   `db:"description"`
-	CreatedAt   time.Time `db:"created_at"`
-	OwnerID     *int64    `db:"owner_id"`
+	ChatID      int64     `validate:"required,gt=0"`
+	ChatType    string    `validate:"required,oneof=direct group,max=16"`
+	Name        *string   `validate:"omitempty,max=64"`
+	Title       *string   `validate:"omitempty,max=64"`
+	Description *string   `validate:"omitempty,max=255"`
+	CreatedAt   time.Time `validate:"structonly"`
+	OwnerID     *int64    `validate:"omitempty,gt=0"`
+}
+
+// SendMessage represents model for message broker
+type SendMessage struct {
+	ChatID   int64  `validate:"required,gt=0"`
+	SenderID int64  `validate:"required,gt=0"`
+	Message  string `validate:"required,min=1,max=4096"`
 }

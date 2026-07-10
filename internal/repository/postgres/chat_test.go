@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
@@ -20,15 +20,14 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		input   *entity.DirectChat
+		input   *model.DirectChat
 		mock    func(mock sqlmock.Sqlmock)
 		wantErr bool
 	}{
 		{
 			name: "Success",
-			input: &entity.DirectChat{
-				SenderID:    1,
-				RecipientID: 2,
+			input: &model.DirectChat{
+				ParticipantIDs: []int64{1, 2},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
@@ -46,9 +45,8 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 		},
 		{
 			name: "Error - Unique Violation in chats",
-			input: &entity.DirectChat{
-				SenderID:    1,
-				RecipientID: 2,
+			input: &model.DirectChat{
+				ParticipantIDs: []int64{1, 2},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
@@ -96,13 +94,13 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		input   *entity.GroupChat
+		input   *model.GroupChat
 		mock    func(mock sqlmock.Sqlmock)
 		wantErr bool
 	}{
 		{
 			name: "Success",
-			input: &entity.GroupChat{
+			input: &model.GroupChat{
 				Name:           "Group 1",
 				Title:          ptr("Group chat"),
 				Description:    ptr("Group chat"),
@@ -127,7 +125,7 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 		},
 		{
 			name: "Error - Transaction Begin Failed",
-			input: &entity.GroupChat{
+			input: &model.GroupChat{
 				Name: "Group 2",
 			},
 			mock: func(mock sqlmock.Sqlmock) {

@@ -3,7 +3,6 @@ package v1
 import (
 	"context"
 
-	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
@@ -31,7 +30,7 @@ type MessengerService interface {
 	GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]entity.Chat, error)
 
 	// SendMessage sends message into target chat.
-	SendMessage(message *dto.SendMessageReq) error
+	SendMessage(ctx context.Context, message *entity.SendMessage) error
 }
 
 type Handler struct {
