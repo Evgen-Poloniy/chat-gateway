@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -177,4 +178,59 @@ func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64,
 	}
 
 	return chats, nil
+}
+
+// UpdateChat updates data about chat like name, title, description, owner
+func (p *PostgresRepository) UpdateChat(ctx context.Context, chat *model.UpdateChat) error {
+	query := `
+		UPDATE chats
+		SET
+			name = COALESCE(:name, name),
+			title = COALESCE(:title, title),
+			description = COALESCE(:description, description),
+			owner_id = CASE
+				WHEN :owner_id IS NULL THEN owner_id
+				WHEN :owner_id = :user_id_updater THEN owner_id
+				ELSE owner_id
+			END
+		WHERE id = :id
+		RETURNING name, title, description, created_at, owner_id
+	`
+
+	boundQuery, args, err := p.db.BindNamed(query, chat)
+	if err != nil {
+		return errs.NewAppError(
+			errs.CodeQueryError,
+			"database error: failed to bind named params",
+			fmt.Errorf("database error: %v", err),
+		)
+	}
+
+	if err := p.db.QueryRowxContext(ctx, boundQuery, args...).StructScan(chat); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errs.NewAppError(
+				errs.CodeUserNotFound,
+				fmt.Sprintf("database error: record about chat with chat_id '%d' not found", chat.ChatID),
+				fmt.Errorf("database error: record about chat with chat_id '%d' not found", chat.ChatID),
+			)
+		}
+
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
+			if pgErr.Code == "23505" {
+				return errs.NewAppError(
+					errs.CodeUniqueViolation,
+					"database error: "+pgErr.Message,
+					fmt.Errorf("database error: %s", pgErr.Detail),
+				)
+			}
+		}
+
+		return errs.NewAppError(
+			errs.CodeQueryError,
+			"database error: failed to insert values into table",
+			fmt.Errorf("database error: %v", err),
+		)
+	}
+
+	return nil
 }

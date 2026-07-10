@@ -31,6 +31,17 @@ type Chat struct {
 	OwnerID     *int64    `db:"owner_id"`
 }
 
+// UpdateChat represents database model for update data about group chat.
+type UpdateChat struct {
+	UserIDUpdater int64     `db:"user_id_updater"`
+	ChatID        int64     `db:"id"`
+	Name          *string   `db:"name"`
+	Title         *string   `db:"title"`
+	Description   *string   `db:"description"`
+	CreatedAt     time.Time `db:"created_at"`
+	OwnerID       *int64    `db:"owner_id"`
+}
+
 // SendMessage represents model for message broker
 type SendMessage struct {
 	ChatID   int64  `json:"chat_id"`

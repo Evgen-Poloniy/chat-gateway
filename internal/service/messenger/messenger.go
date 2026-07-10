@@ -15,6 +15,8 @@ import (
 
 // MessengerRepository represents interface for work with the messenger database.
 type MessengerRepository interface {
+	// Users:
+
 	// CreateUser allows create user into messenger database.
 	CreateUser(ctx context.Context, user *model.User) error
 
@@ -27,14 +29,19 @@ type MessengerRepository interface {
 	// UpdateUser updates data about user into messenger database.
 	UpdateUser(ctx context.Context, user *model.UpdateUser) error
 
+	// Chats:
+
 	// CreateChat accept user IDs and create direct chat.
 	CreateDirectChat(ctx context.Context, chat *model.DirectChat) error
 
 	// CreateChat accept user IDs and create group chat.
 	CreateGroupChat(ctx context.Context, chat *model.GroupChat) error
 
-	// GetChatsByUserID gets chat by user_id with limits and offset
+	// GetChatsByUserID gets chat by user_id with limits and offset.
 	GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]model.Chat, error)
+
+	// UpdateChat updates data about chat like name, title, description, owner.
+	UpdateChat(ctx context.Context, chat *model.UpdateChat) error
 }
 
 // MessageBroker represents interface for work with the messenger broker

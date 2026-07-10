@@ -6,7 +6,7 @@ import "time"
 type DirectChat struct {
 	ChatID         int64     `validate:"required,gt=0"`
 	ParticipantIDs []int64   `validate:"required,len=2,dive,gt=0"`
-	CreatedAt      time.Time `validate:"structonly"`
+	CreatedAt      time.Time `validate:"-"`
 }
 
 // GroupChat represents database model for creating group chat.
@@ -16,7 +16,7 @@ type GroupChat struct {
 	Name           string    `validate:"required,min=1,max=64"`
 	Title          *string   `validate:"omitempty,max=64"`
 	Description    *string   `validate:"omitempty,max=255"`
-	CreatedAt      time.Time `validate:"structonly"`
+	CreatedAt      time.Time `validate:"-"`
 	OwnerID        int64     `validate:"required,gt=0"`
 }
 
@@ -27,8 +27,19 @@ type Chat struct {
 	Name        *string   `validate:"omitempty,max=64"`
 	Title       *string   `validate:"omitempty,max=64"`
 	Description *string   `validate:"omitempty,max=255"`
-	CreatedAt   time.Time `validate:"structonly"`
+	CreatedAt   time.Time `validate:"-"`
 	OwnerID     *int64    `validate:"omitempty,gt=0"`
+}
+
+// UpdateChat represents database model for update data about group chat.
+type UpdateChat struct {
+	UserIDUpdater int64     `validate:"required,gt=0"`
+	ChatID        int64     `validate:"required,gt=0"`
+	Name          *string   `validate:"omitempty,min=1,max=64"`
+	Title         *string   `validate:"omitempty,max=64"`
+	Description   *string   `validate:"omitempty,max=255"`
+	CreatedAt     time.Time `validate:"-"`
+	OwnerID       *int64    `validate:"omitempty,gt=0"`
 }
 
 // SendMessage represents model for message broker

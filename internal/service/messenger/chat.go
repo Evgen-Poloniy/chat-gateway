@@ -73,6 +73,33 @@ func (m *MessengerService) GetChatsByUserID(ctx context.Context, userID int64, l
 	return chats, nil
 }
 
+// UpdateChat updates data about chat like name, title, description, owner
+func (m *MessengerService) UpdateChat(ctx context.Context, chat *entity.UpdateChat) error {
+	if err := m.validateData(ctx, chat); err != nil {
+		return err
+	}
+
+	chatModel := model.UpdateChat{
+		ChatID:      chat.ChatID,
+		Name:        chat.Name,
+		Title:       chat.Title,
+		Description: chat.Description,
+		OwnerID:     chat.OwnerID,
+	}
+
+	if err := m.messengerRepository.UpdateChat(ctx, &chatModel); err != nil {
+		return err
+	}
+
+	chat.Name = chatModel.Name
+	chat.Title = chatModel.Title
+	chat.Description = chatModel.Description
+	chat.CreatedAt = chatModel.CreatedAt
+	chat.OwnerID = chatModel.OwnerID
+
+	return nil
+}
+
 // SendMessage sends message into target chat.
 func (m *MessengerService) SendMessage(ctx context.Context, message *entity.SendMessage) error {
 	if err := m.validateData(ctx, message); err != nil {

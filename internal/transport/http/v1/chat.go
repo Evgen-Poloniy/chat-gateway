@@ -188,6 +188,67 @@ func (h *Handler) GetChatsByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
 }
 
+// UpdateChat updates data about chat like name, title, description, owner.
+func (h *Handler) UpdateChat(c *gin.Context) {
+	chatIdParam := c.Param("chat_id")
+	if chatIdParam == "" {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "bad_request",
+			Message:    errs.ErrChatIdIsRequired.Error(),
+			Err:        errs.ErrChatIdIsRequired,
+		})
+		return
+	}
+
+	chatID, err := strconv.ParseInt(chatIdParam, 10, 64)
+	if err != nil {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "bad_request",
+			Message:    "failed to convert parameter 'chat_id' to int64",
+			Err:        fmt.Errorf("failed to convert parameter 'chat_id' to int64: %v", err),
+		})
+		return
+	}
+
+	var req dto.UpdateChatReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "bad_request",
+			Message:    err.Error(),
+			Err:        err,
+		})
+		return
+	}
+
+	chat := entity.UpdateChat{
+		ChatID:      chatID,
+		Name:        req.Name,
+		Title:       req.Title,
+		Description: req.Description,
+		OwnerID:     req.OwnerID,
+	}
+
+	if err := h.messenger.UpdateChat(c.Request.Context(), &chat); err != nil {
+		c.Error(err)
+	}
+
+	resp := dto.UpdateChatResp{
+		UserIDUpdater: chat.UserIDUpdater,
+		ChatID:        chat.ChatID,
+		ChatType:      "group",
+		Name:          *chat.Name,
+		Title:         chat.Title,
+		Description:   chat.Description,
+		CreatedAt:     chat.CreatedAt,
+		OwnerID:       *chat.OwnerID,
+	}
+
+	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
+}
+
 // SendMessage sends message into target chat.
 func (h *Handler) SendMessage(c *gin.Context) {
 	var req dto.SendMessageReq

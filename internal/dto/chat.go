@@ -24,8 +24,8 @@ type CreateGroupChatReq struct {
 type DirectChatResp struct {
 	ChatID         int64     `json:"chat_id"`
 	ParticipantIDs []int64   `json:"participant_ids"`
-	CreatedAt      time.Time `json:"created_at"`
 	ChatType       string    `json:"type"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 // GroupChatResp represents DTO for group chat response data.
@@ -38,6 +38,27 @@ type GroupChatResp struct {
 	Description    *string   `json:"description,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 	OwnerID        int64     `json:"owner_id"`
+}
+
+// UpdateChatReq represents DTO request for updating data about group chat.
+type UpdateChatReq struct {
+	UserIDUpdater int64   `json:"user_id_updater"`
+	Name          *string `json:"name,omitempty"`
+	Title         *string `json:"title,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	OwnerID       *int64  `json:"owner_id,omitempty"`
+}
+
+// UpdateChatResp represents DTO response about updating group data.
+type UpdateChatResp struct {
+	UserIDUpdater int64     `json:"user_id_updater"`
+	ChatID        int64     `json:"chat_id"`
+	ChatType      string    `json:"type"`
+	Name          string    `json:"name"`
+	Title         *string   `json:"title,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	OwnerID       int64     `json:"owner_id"`
 }
 
 // SendMessage represents DTO for message sending
