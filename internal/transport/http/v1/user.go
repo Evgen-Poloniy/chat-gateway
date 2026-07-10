@@ -52,7 +52,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.DataResp{Data: resp})
 }
 
-// RegisterUser register user by username and details about user.
+// UpdateChat updates data about chat like name, title, description, owner.
 func (h *Handler) UpdateUser(c *gin.Context) {
 	userIdParam := c.Param("user_id")
 	if userIdParam == "" {
