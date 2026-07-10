@@ -22,6 +22,7 @@ func NewRouter(router *gin.Engine, handler *Handler, apiKeyHash []byte) {
 			chats.POST("/create/group", handler.CreateGroupChat)
 			chats.POST("/send", handler.SendMessage)
 			chats.GET("/get/:user_id", handler.GetChatsByUserID)
+			chats.GET("/get/:username", handler.GetUserDataByUsername)
 			chats.PATCH("/update/:chat_id", handler.UpdateChat)
 		}
 
