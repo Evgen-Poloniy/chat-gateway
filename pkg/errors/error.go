@@ -16,6 +16,7 @@ const (
 	CodeDeserializationError
 	CodeUsernameIsRequired
 	CodeUserIdIsRequired
+	CodeChatIdIsRequired
 	CodeInvalidParameter
 	CodeValidationError
 )
@@ -73,6 +74,7 @@ var (
 	ErrInvalidAPIKey          = errors.New("invalid API-Key")
 	ErrUsernameIsRequired     = errors.New("username is required")
 	ErrUserIdIsRequired       = errors.New("user_id is required")
+	ErrChatIdIsRequired       = errors.New("chat_id is required")
 	ErrInvalidParameter       = errors.New("invalid parameter")
 	ErrPageRequiredBeGreater  = errors.New("query parameter 'page' required be greater or equals then 1")
 	ErrLimitRequiredBeGreater = errors.New("query parameter 'limit' required be greater or equals then 1")
