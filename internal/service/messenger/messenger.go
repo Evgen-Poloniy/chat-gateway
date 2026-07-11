@@ -40,8 +40,8 @@ type MessengerRepository interface {
 	// GetChatsByUserID gets chat by user_id with limits and offset.
 	GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]model.Chat, error)
 
-	// UpdateChat updates data about chat like name, title, description, owner.
-	UpdateChat(ctx context.Context, chat *model.UpdateChat) error
+	// UpdateGroupChat updates data about chat like name, title, description, owner.
+	UpdateGroupChat(ctx context.Context, chat *model.UpdateGroupChat) error
 }
 
 // MessageBroker represents interface for work with the messenger broker

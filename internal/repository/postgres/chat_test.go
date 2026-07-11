@@ -472,7 +472,7 @@ func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 	}
 }
 
-func TestPostgresRepository_UpdateChat(t *testing.T) {
+func TestPostgresRepository_UpdateGroupChat(t *testing.T) {
 	now := time.Now()
 
 	expectedQuery := `
@@ -492,14 +492,14 @@ func TestPostgresRepository_UpdateChat(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		input             *model.UpdateChat
-		mock              func(mock sqlmock.Sqlmock, chat *model.UpdateChat)
+		input             *model.UpdateGroupChat
+		mock              func(mock sqlmock.Sqlmock, chat *model.UpdateGroupChat)
 		wantErr           bool
 		expectedErrorCode errs.ErrCode
 	}{
 		{
 			name: "Success",
-			input: &model.UpdateChat{
+			input: &model.UpdateGroupChat{
 				ChatID:        10,
 				Name:          ptr("Updated Name"),
 				Title:         ptr("Updated Title"),
@@ -507,7 +507,7 @@ func TestPostgresRepository_UpdateChat(t *testing.T) {
 				OwnerID:       ptr(int64(2)),
 				UserIDUpdater: 1,
 			},
-			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateChat) {
+			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateGroupChat) {
 				rows := sqlmock.NewRows([]string{"name", "title", "description", "created_at", "owner_id"}).
 					AddRow(*chat.Name, *chat.Title, *chat.Description, now, *chat.OwnerID)
 
@@ -527,7 +527,7 @@ func TestPostgresRepository_UpdateChat(t *testing.T) {
 		},
 		{
 			name: "Error - Chat Not Found",
-			input: &model.UpdateChat{
+			input: &model.UpdateGroupChat{
 				ChatID:        10,
 				Name:          ptr("Updated Name"),
 				Title:         ptr("Updated Title"),
@@ -535,7 +535,7 @@ func TestPostgresRepository_UpdateChat(t *testing.T) {
 				OwnerID:       ptr(int64(2)),
 				UserIDUpdater: 1,
 			},
-			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateChat) {
+			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateGroupChat) {
 				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
 					WithArgs(
 						chat.Name, chat.Title, chat.Description,
@@ -548,7 +548,7 @@ func TestPostgresRepository_UpdateChat(t *testing.T) {
 		},
 		{
 			name: "Error - Unique Violation",
-			input: &model.UpdateChat{
+			input: &model.UpdateGroupChat{
 				ChatID:        10,
 				Name:          ptr("Updated Name"),
 				Title:         ptr("Updated Title"),
@@ -556,7 +556,7 @@ func TestPostgresRepository_UpdateChat(t *testing.T) {
 				OwnerID:       ptr(int64(2)),
 				UserIDUpdater: 1,
 			},
-			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateChat) {
+			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateGroupChat) {
 				pgErr := &pgconn.PgError{
 					Code:    "23505",
 					Message: "duplicate key value violates unique constraint",
@@ -573,7 +573,7 @@ func TestPostgresRepository_UpdateChat(t *testing.T) {
 		},
 		{
 			name: "Error - Bind Named Params",
-			input: &model.UpdateChat{
+			input: &model.UpdateGroupChat{
 				ChatID:        10,
 				Name:          ptr("Updated Name"),
 				Title:         ptr("Updated Title"),
@@ -581,7 +581,7 @@ func TestPostgresRepository_UpdateChat(t *testing.T) {
 				OwnerID:       ptr(int64(2)),
 				UserIDUpdater: 1,
 			},
-			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateChat) {
+			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateGroupChat) {
 				mock.ExpectQuery(`UPDATE chats SET *`).
 					WithArgs(
 						chat.Name, chat.Title, chat.Description,
@@ -602,7 +602,7 @@ func TestPostgresRepository_UpdateChat(t *testing.T) {
 			repo := pg.NewPostgresRepository(db)
 			tt.mock(mock, tt.input)
 
-			err := repo.UpdateChat(context.Background(), tt.input)
+			err := repo.UpdateGroupChat(context.Background(), tt.input)
 
 			if tt.wantErr {
 				assert.Error(t, err)

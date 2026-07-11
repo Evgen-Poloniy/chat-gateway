@@ -188,8 +188,8 @@ func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64,
 	return chats, nil
 }
 
-// UpdateChat updates data about chat like name, title, description, owner
-func (p *PostgresRepository) UpdateChat(ctx context.Context, chat *model.UpdateChat) error {
+// UpdateGroupChat updates data about chat like name, title, description, owner
+func (p *PostgresRepository) UpdateGroupChat(ctx context.Context, chat *model.UpdateGroupChat) error {
 	query := `
 		UPDATE chats
 		SET

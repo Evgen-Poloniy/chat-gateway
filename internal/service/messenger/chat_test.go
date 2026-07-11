@@ -317,7 +317,7 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 	}
 }
 
-func TestMessengerService_UpdateChat(t *testing.T) {
+func TestMessengerService_UpdateGroupChat(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -327,21 +327,21 @@ func TestMessengerService_UpdateChat(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		chat    *entity.UpdateChat
+		chat    *entity.UpdateGroupChat
 		mock    func()
 		wantErr bool
 	}{
 		{
 			name: "Success: Update Name",
-			chat: &entity.UpdateChat{
+			chat: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        1,
 				Name:          ptr("New Name"),
 			},
 			mock: func() {
 				mockRepo.EXPECT().
-					UpdateChat(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(ctx context.Context, m *model.UpdateChat) error {
+					UpdateGroupChat(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
 						m.CreatedAt = now
 						return nil
 					})
@@ -350,7 +350,7 @@ func TestMessengerService_UpdateChat(t *testing.T) {
 		},
 		{
 			name: "Success: Update Title and Description",
-			chat: &entity.UpdateChat{
+			chat: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        1,
 				Title:         ptr("New Title"),
@@ -358,8 +358,8 @@ func TestMessengerService_UpdateChat(t *testing.T) {
 			},
 			mock: func() {
 				mockRepo.EXPECT().
-					UpdateChat(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(ctx context.Context, m *model.UpdateChat) error {
+					UpdateGroupChat(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
 						m.CreatedAt = now
 						return nil
 					})
@@ -368,21 +368,21 @@ func TestMessengerService_UpdateChat(t *testing.T) {
 		},
 		{
 			name: "Repository error",
-			chat: &entity.UpdateChat{
+			chat: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        1,
 				Name:          ptr("New Name"),
 			},
 			mock: func() {
 				mockRepo.EXPECT().
-					UpdateChat(gomock.Any(), gomock.Any()).
+					UpdateGroupChat(gomock.Any(), gomock.Any()).
 					Return(errors.New("db error"))
 			},
 			wantErr: true,
 		},
 		{
 			name: "Validation: Missing UserIDUpdater",
-			chat: &entity.UpdateChat{
+			chat: &entity.UpdateGroupChat{
 				UserIDUpdater: 0,
 				ChatID:        1,
 			},
@@ -391,7 +391,7 @@ func TestMessengerService_UpdateChat(t *testing.T) {
 		},
 		{
 			name: "Validation: Missing ChatID",
-			chat: &entity.UpdateChat{
+			chat: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        0,
 			},
@@ -400,7 +400,7 @@ func TestMessengerService_UpdateChat(t *testing.T) {
 		},
 		{
 			name: "Validation: Name too long",
-			chat: &entity.UpdateChat{
+			chat: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        1,
 				Name:          ptr(strings.Repeat("A", 65)),
@@ -410,7 +410,7 @@ func TestMessengerService_UpdateChat(t *testing.T) {
 		},
 		{
 			name: "Validation: Invalid OwnerID",
-			chat: &entity.UpdateChat{
+			chat: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        1,
 				OwnerID:       ptr(int64(0)),
@@ -425,7 +425,7 @@ func TestMessengerService_UpdateChat(t *testing.T) {
 			if tt.mock != nil {
 				tt.mock()
 			}
-			err := svc.UpdateChat(ctx, tt.chat)
+			err := svc.UpdateGroupChat(ctx, tt.chat)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

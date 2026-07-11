@@ -40,8 +40,8 @@ type GroupChatResp struct {
 	OwnerID        int64     `json:"owner_id"`
 }
 
-// UpdateChatReq represents DTO request for updating data about group chat.
-type UpdateChatReq struct {
+// UpdateGroupChatReq represents DTO request for updating data about group chat.
+type UpdateGroupChatReq struct {
 	UserIDUpdater int64   `json:"user_id_updater"`
 	Name          *string `json:"name,omitempty"`
 	Title         *string `json:"title,omitempty"`
@@ -49,8 +49,8 @@ type UpdateChatReq struct {
 	OwnerID       *int64  `json:"owner_id,omitempty"`
 }
 
-// UpdateChatResp represents DTO response about updating group data.
-type UpdateChatResp struct {
+// UpdateGroupChatResp represents DTO response about updating group data.
+type UpdateGroupChatResp struct {
 	UserIDUpdater int64     `json:"user_id_updater"`
 	ChatID        int64     `json:"chat_id"`
 	ChatType      string    `json:"type"`

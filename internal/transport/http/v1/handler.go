@@ -33,8 +33,8 @@ type MessengerService interface {
 	// GetChatsByUserID gets chat by user_id with limits and offset.
 	GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]entity.Chat, error)
 
-	// UpdateChat updates data about chat like name, title, description, owner.
-	UpdateChat(ctx context.Context, chat *entity.UpdateChat) error
+	// UpdateGroupChat updates data about chat like name, title, description, owner.
+	UpdateGroupChat(ctx context.Context, chat *entity.UpdateGroupChat) error
 
 	// SendMessage sends message into target chat.
 	SendMessage(ctx context.Context, message *entity.SendMessage) error

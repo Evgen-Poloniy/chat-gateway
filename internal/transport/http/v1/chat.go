@@ -188,8 +188,8 @@ func (h *Handler) GetChatsByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
 }
 
-// UpdateChat updates data about chat like name, title, description, owner.
-func (h *Handler) UpdateChat(c *gin.Context) {
+// UpdateGroupChat updates data about chat like name, title, description, owner.
+func (h *Handler) UpdateGroupChat(c *gin.Context) {
 	chatIdParam := c.Param("chat_id")
 	if chatIdParam == "" {
 		c.Error(&errs.HttpError{
@@ -212,7 +212,7 @@ func (h *Handler) UpdateChat(c *gin.Context) {
 		return
 	}
 
-	var req dto.UpdateChatReq
+	var req dto.UpdateGroupChatReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
@@ -223,7 +223,7 @@ func (h *Handler) UpdateChat(c *gin.Context) {
 		return
 	}
 
-	chat := entity.UpdateChat{
+	chat := entity.UpdateGroupChat{
 		ChatID:      chatID,
 		Name:        req.Name,
 		Title:       req.Title,
@@ -231,11 +231,11 @@ func (h *Handler) UpdateChat(c *gin.Context) {
 		OwnerID:     req.OwnerID,
 	}
 
-	if err := h.messenger.UpdateChat(c.Request.Context(), &chat); err != nil {
+	if err := h.messenger.UpdateGroupChat(c.Request.Context(), &chat); err != nil {
 		c.Error(err)
 	}
 
-	resp := dto.UpdateChatResp{
+	resp := dto.UpdateGroupChatResp{
 		UserIDUpdater: chat.UserIDUpdater,
 		ChatID:        chat.ChatID,
 		ChatType:      "group",

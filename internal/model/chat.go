@@ -31,8 +31,8 @@ type Chat struct {
 	OwnerID     *int64    `db:"owner_id"`
 }
 
-// UpdateChat represents database model for update data about group chat.
-type UpdateChat struct {
+// UpdateGroupChat represents database model for update data about group chat.
+type UpdateGroupChat struct {
 	UserIDUpdater int64     `db:"user_id_updater"`
 	ChatID        int64     `db:"id"`
 	Name          *string   `db:"name"`

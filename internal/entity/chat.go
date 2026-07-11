@@ -31,8 +31,8 @@ type Chat struct {
 	OwnerID     *int64    `validate:"omitempty,gt=0"`
 }
 
-// UpdateChat represents database model for update data about group chat.
-type UpdateChat struct {
+// UpdateGroupChat represents database model for update data about group chat.
+type UpdateGroupChat struct {
 	UserIDUpdater int64     `validate:"required,gt=0"`
 	ChatID        int64     `validate:"required,gt=0"`
 	Name          *string   `validate:"omitempty,min=1,max=64"`
