@@ -3,8 +3,13 @@ package messenger_test
 import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger"
 	mock_repository "github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger/mocks"
+	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 
 	"go.uber.org/mock/gomock"
+)
+
+var (
+	errRepoQueryError = errs.NewAppError(errs.CodeQueryError, "query error", nil)
 )
 
 func ptr[T any](v T) *T {

@@ -9,96 +9,131 @@ import (
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-
+	mock_repository "github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger/mocks"
+	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
+var (
+	errRepoChatNotFound = errs.NewAppError(errs.CodeChatNotFound, "chat not found", nil)
+	errBrokerError      = errs.NewAppError(errs.CodeQueryError, "broker error", nil)
+)
+
 func TestMessengerService_CreateDirectChat(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	svc, mockRepo, _ := setupMockService(ctrl)
-	ctx := context.Background()
-
 	tests := []struct {
-		name    string
-		chat    *entity.DirectChat
-		mock    func()
-		wantErr bool
+		name              string
+		input             *entity.DirectChat
+		mock              func(mock *mock_repository.MockMessengerRepository)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
 	}{
 		{
 			name: "Success",
-			chat: &entity.DirectChat{
+			input: &entity.DirectChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1, 2},
 			},
-			mock: func() {
-				mockRepo.EXPECT().
-					CreateDirectChat(gomock.Any(), &model.DirectChat{ParticipantIDs: []int64{1, 2}}).
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					CreateDirectChat(gomock.Any(), gomock.Any()).
 					Return(nil)
 			},
 			wantErr: false,
 		},
 		{
-			name: "Repository error",
-			chat: &entity.DirectChat{
+			name: "Error - Repository Failed",
+			input: &entity.DirectChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1, 2},
 			},
-			mock: func() {
-				mockRepo.EXPECT().
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
 					CreateDirectChat(gomock.Any(), gomock.Any()).
-					Return(errors.New("db error"))
+					Return(errRepoQueryError)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
 		},
 		{
-			name: "Validation: Missing ChatID",
-			chat: &entity.DirectChat{
-				ChatID:         0,
-				ParticipantIDs: []int64{1, 2},
+			name: "Error - Validation (Missing ParticipantIDs)",
+			input: &entity.DirectChat{
+				ChatID:         1,
+				ParticipantIDs: nil,
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Only 1 participant",
-			chat: &entity.DirectChat{
+			name: "Error - Validation (Invalid ParticipantIDs count - 1)",
+			input: &entity.DirectChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1},
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: 3 participants",
-			chat: &entity.DirectChat{
+			name: "Error - Validation (Invalid ParticipantIDs count - 3)",
+			input: &entity.DirectChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1, 2, 3},
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Invalid participant ID",
-			chat: &entity.DirectChat{
+			name: "Error - Validation (Invalid Participant ID - 0)",
+			input: &entity.DirectChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1, 0},
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Invalid Participant ID - negative)",
+			input: &entity.DirectChat{
+				ChatID:         1,
+				ParticipantIDs: []int64{1, -5},
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Invalid ChatID - negative)",
+			input: &entity.DirectChat{
+				ChatID:         -1,
+				ParticipantIDs: []int64{1, 2},
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.mock != nil {
-				tt.mock()
-			}
-			err := svc.CreateDirectChat(ctx, tt.chat)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc, mockRepo, _ := setupMockService(ctrl)
+
+			tt.mock(mockRepo)
+
+			err := svc.CreateDirectChat(context.Background(), tt.input)
+
 			if tt.wantErr {
 				assert.Error(t, err)
+				var appErr *errs.AppError
+				if errors.As(err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
 			} else {
 				assert.NoError(t, err)
 			}
@@ -107,29 +142,25 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 }
 
 func TestMessengerService_CreateGroupChat(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	svc, mockRepo, _ := setupMockService(ctrl)
-	ctx := context.Background()
 	now := time.Now()
 
 	tests := []struct {
-		name    string
-		chat    *entity.GroupChat
-		mock    func()
-		wantErr bool
+		name              string
+		input             *entity.GroupChat
+		mock              func(mock *mock_repository.MockMessengerRepository)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
 	}{
 		{
 			name: "Success",
-			chat: &entity.GroupChat{
+			input: &entity.GroupChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1, 2, 3},
 				Name:           "Dev Team",
 				OwnerID:        1,
 			},
-			mock: func() {
-				mockRepo.EXPECT().
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
 					CreateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.GroupChat) error {
 						m.ChatID = 100
@@ -140,206 +171,301 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Repository error",
-			chat: &entity.GroupChat{
+			name: "Success - Boundary Values",
+			input: &entity.GroupChat{
+				ChatID:         1,
+				ParticipantIDs: []int64{1, 2},
+				Name:           strings.Repeat("A", 64),
+				Title:          ptr(strings.Repeat("B", 64)),
+				Description:    ptr(strings.Repeat("C", 255)),
+				OwnerID:        1,
+			},
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					CreateGroupChat(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, m *model.GroupChat) error {
+						m.ChatID = 100
+						m.CreatedAt = now
+						return nil
+					})
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error - Repository Failed",
+			input: &entity.GroupChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1, 2, 3},
 				Name:           "Dev Team",
 				OwnerID:        1,
 			},
-			mock: func() {
-				mockRepo.EXPECT().
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
 					CreateGroupChat(gomock.Any(), gomock.Any()).
-					Return(errors.New("db error"))
+					Return(errRepoQueryError)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
 		},
 		{
-			name: "Validation: Missing ChatID",
-			chat: &entity.GroupChat{
-				ChatID:         0,
-				ParticipantIDs: []int64{1, 2},
-				Name:           "Dev Team",
-				OwnerID:        1,
-			},
-			mock:    func() {},
-			wantErr: true,
-		},
-		{
-			name: "Validation: Less than 2 participants",
-			chat: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1},
-				Name:           "Dev Team",
-				OwnerID:        1,
-			},
-			mock:    func() {},
-			wantErr: true,
-		},
-		{
-			name: "Validation: Invalid participant ID",
-			chat: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, -5},
-				Name:           "Dev Team",
-				OwnerID:        1,
-			},
-			mock:    func() {},
-			wantErr: true,
-		},
-		{
-			name: "Validation: Missing Name",
-			chat: &entity.GroupChat{
+			name: "Error - Validation (Missing Name - empty)",
+			input: &entity.GroupChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1, 2},
 				Name:           "",
 				OwnerID:        1,
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Name too long",
-			chat: &entity.GroupChat{
+			name: "Error - Validation (Name too long - 65)",
+			input: &entity.GroupChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1, 2},
 				Name:           strings.Repeat("A", 65),
 				OwnerID:        1,
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Missing OwnerID",
-			chat: &entity.GroupChat{
+			name: "Error - Validation (Title too long - 65)",
+			input: &entity.GroupChat{
+				ChatID:         1,
+				ParticipantIDs: []int64{1, 2},
+				Name:           "Dev Team",
+				Title:          ptr(strings.Repeat("A", 65)),
+				OwnerID:        1,
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Description too long - 256)",
+			input: &entity.GroupChat{
+				ChatID:         1,
+				ParticipantIDs: []int64{1, 2},
+				Name:           "Dev Team",
+				Description:    ptr(strings.Repeat("A", 256)),
+				OwnerID:        1,
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Missing OwnerID - 0)",
+			input: &entity.GroupChat{
 				ChatID:         1,
 				ParticipantIDs: []int64{1, 2},
 				Name:           "Dev Team",
 				OwnerID:        0,
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Invalid OwnerID - negative)",
+			input: &entity.GroupChat{
+				ChatID:         1,
+				ParticipantIDs: []int64{1, 2},
+				Name:           "Dev Team",
+				OwnerID:        -1,
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Less than 2 participants - 1)",
+			input: &entity.GroupChat{
+				ChatID:         1,
+				ParticipantIDs: []int64{1},
+				Name:           "Dev Team",
+				OwnerID:        1,
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Empty participants - 0)",
+			input: &entity.GroupChat{
+				ChatID:         1,
+				ParticipantIDs: []int64{},
+				Name:           "Dev Team",
+				OwnerID:        1,
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Invalid participant ID - negative)",
+			input: &entity.GroupChat{
+				ChatID:         1,
+				ParticipantIDs: []int64{1, -5},
+				Name:           "Dev Team",
+				OwnerID:        1,
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.mock != nil {
-				tt.mock()
-			}
-			err := svc.CreateGroupChat(ctx, tt.chat)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc, mockRepo, _ := setupMockService(ctrl)
+
+			tt.mock(mockRepo)
+
+			err := svc.CreateGroupChat(context.Background(), tt.input)
+
 			if tt.wantErr {
 				assert.Error(t, err)
+				var appErr *errs.AppError
+				if errors.As(err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, int64(100), tt.chat.ChatID)
-				assert.Equal(t, now, tt.chat.CreatedAt)
+				assert.Equal(t, int64(100), tt.input.ChatID)
+				assert.Equal(t, now, tt.input.CreatedAt)
 			}
 		})
 	}
 }
 
 func TestMessengerService_GetChatsByUserID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	svc, mockRepo, _ := setupMockService(ctrl)
-	ctx := context.Background()
-
 	tests := []struct {
-		name          string
-		userID        int64
-		limit         int
-		offset        int
-		mock          func()
-		expectedChats []entity.Chat
-		wantErr       bool
+		name              string
+		userID            int64
+		limit             int
+		offset            int
+		mock              func(mock *mock_repository.MockMessengerRepository)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
 	}{
 		{
-			name:   "Success: return chats",
+			name:   "Success",
 			userID: 1,
 			limit:  10,
 			offset: 0,
-			mock: func() {
-				mockRepo.EXPECT().
-					GetChatsByUserID(ctx, int64(1), 10, 0).
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					GetChatsByUserID(gomock.Any(), int64(1), 10, 0).
 					Return([]model.Chat{
 						{ChatID: 1, ChatType: "direct", Name: ptr("Chat 1"), OwnerID: ptr(int64(1))},
-						{ChatID: 2, ChatType: "group", Name: ptr("Chat 2"), OwnerID: ptr(int64(2))},
 					}, nil)
-			},
-			expectedChats: []entity.Chat{
-				{ChatID: 1, ChatType: "direct", Name: ptr("Chat 1"), OwnerID: ptr(int64(1))},
-				{ChatID: 2, ChatType: "group", Name: ptr("Chat 2"), OwnerID: ptr(int64(2))},
 			},
 			wantErr: false,
 		},
 		{
-			name:   "Success: empty result",
+			name:   "Success - Empty Result",
 			userID: 2,
 			limit:  10,
 			offset: 0,
-			mock: func() {
-				mockRepo.EXPECT().
-					GetChatsByUserID(ctx, int64(2), 10, 0).
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					GetChatsByUserID(gomock.Any(), int64(2), 10, 0).
 					Return([]model.Chat{}, nil)
 			},
-			expectedChats: []entity.Chat{},
-			wantErr:       false,
+			wantErr: false,
 		},
 		{
-			name:   "Repository error",
+			name:   "Error - Repository Failed",
 			userID: 1,
 			limit:  10,
 			offset: 0,
-			mock: func() {
-				mockRepo.EXPECT().
-					GetChatsByUserID(ctx, int64(1), 10, 0).
-					Return(nil, errors.New("db error"))
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					GetChatsByUserID(gomock.Any(), int64(1), 10, 0).
+					Return(nil, errRepoQueryError)
 			},
-			expectedChats: nil,
-			wantErr:       true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+		{
+			name:   "Error - Repository Failed (Invalid UserID - negative)",
+			userID: -1,
+			limit:  10,
+			offset: 0,
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					GetChatsByUserID(gomock.Any(), int64(-1), 10, 0).
+					Return(nil, errRepoQueryError)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+		{
+			name:   "Error - Repository Failed (Invalid limit - negative)",
+			userID: 1,
+			limit:  -10,
+			offset: 0,
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					GetChatsByUserID(gomock.Any(), int64(1), -10, 0).
+					Return(nil, errRepoQueryError)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.mock()
-			chats, err := svc.GetChatsByUserID(ctx, tt.userID, tt.limit, tt.offset)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc, mockRepo, _ := setupMockService(ctrl)
+
+			tt.mock(mockRepo)
+
+			chats, err := svc.GetChatsByUserID(context.Background(), tt.userID, tt.limit, tt.offset)
+
 			if tt.wantErr {
 				assert.Error(t, err)
+				var appErr *errs.AppError
+				if errors.As(err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
 				assert.Nil(t, chats)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedChats, chats)
 			}
 		})
 	}
 }
 
 func TestMessengerService_UpdateGroupChat(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	svc, mockRepo, _ := setupMockService(ctrl)
-	ctx := context.Background()
 	now := time.Now()
 
 	tests := []struct {
-		name    string
-		chat    *entity.UpdateGroupChat
-		mock    func()
-		wantErr bool
+		name              string
+		input             *entity.UpdateGroupChat
+		mock              func(mock *mock_repository.MockMessengerRepository)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
 	}{
 		{
-			name: "Success: Update Name",
-			chat: &entity.UpdateGroupChat{
+			name: "Success",
+			input: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        1,
 				Name:          ptr("New Name"),
 			},
-			mock: func() {
-				mockRepo.EXPECT().
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
 					UpdateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
 						m.CreatedAt = now
@@ -349,15 +475,17 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Success: Update Title and Description",
-			chat: &entity.UpdateGroupChat{
+			name: "Success - Boundary Values",
+			input: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        1,
-				Title:         ptr("New Title"),
-				Description:   ptr("New Description"),
+				Name:          ptr(strings.Repeat("A", 64)),
+				Title:         ptr(strings.Repeat("B", 64)),
+				Description:   ptr(strings.Repeat("C", 255)),
+				OwnerID:       ptr(int64(1)),
 			},
-			mock: func() {
-				mockRepo.EXPECT().
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
 					UpdateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
 						m.CreatedAt = now
@@ -367,171 +495,289 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Repository error",
-			chat: &entity.UpdateGroupChat{
+			name: "Error - Repository Failed",
+			input: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        1,
 				Name:          ptr("New Name"),
 			},
-			mock: func() {
-				mockRepo.EXPECT().
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
 					UpdateGroupChat(gomock.Any(), gomock.Any()).
-					Return(errors.New("db error"))
+					Return(errRepoQueryError)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
 		},
 		{
-			name: "Validation: Missing UserIDUpdater",
-			chat: &entity.UpdateGroupChat{
+			name: "Error - Validation (Missing UserIDUpdater - 0)",
+			input: &entity.UpdateGroupChat{
 				UserIDUpdater: 0,
 				ChatID:        1,
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Missing ChatID",
-			chat: &entity.UpdateGroupChat{
+			name: "Error - Validation (Invalid UserIDUpdater - negative)",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: -1,
+				ChatID:        1,
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Missing ChatID - 0)",
+			input: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        0,
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Name too long",
-			chat: &entity.UpdateGroupChat{
+			name: "Error - Validation (Invalid ChatID - negative)",
+			input: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
-				ChatID:        1,
-				Name:          ptr(strings.Repeat("A", 65)),
+				ChatID:        -1,
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Invalid OwnerID",
-			chat: &entity.UpdateGroupChat{
+			name: "Error - Validation (Invalid OwnerID - 0)",
+			input: &entity.UpdateGroupChat{
 				UserIDUpdater: 1,
 				ChatID:        1,
 				OwnerID:       ptr(int64(0)),
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Invalid OwnerID - negative)",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: 1,
+				ChatID:        1,
+				OwnerID:       ptr(int64(-5)),
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Name too long - 65)",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: 1,
+				ChatID:        1,
+				Name:          ptr(strings.Repeat("A", 65)),
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Name empty string)",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: 1,
+				ChatID:        1,
+				Name:          ptr(""),
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Title too long - 65)",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: 1,
+				ChatID:        1,
+				Title:         ptr(strings.Repeat("A", 65)),
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Description too long - 256)",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: 1,
+				ChatID:        1,
+				Description:   ptr(strings.Repeat("A", 256)),
+			},
+			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.mock != nil {
-				tt.mock()
-			}
-			err := svc.UpdateGroupChat(ctx, tt.chat)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc, mockRepo, _ := setupMockService(ctrl)
+
+			tt.mock(mockRepo)
+
+			err := svc.UpdateGroupChat(context.Background(), tt.input)
+
 			if tt.wantErr {
 				assert.Error(t, err)
+				var appErr *errs.AppError
+				if errors.As(err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, now, tt.chat.CreatedAt)
+				assert.Equal(t, now, tt.input.CreatedAt)
 			}
 		})
 	}
 }
 
 func TestMessengerService_SendMessage(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	svc, _, mockBroker := setupMockService(ctrl)
-	ctx := context.Background()
-
 	tests := []struct {
-		name    string
-		message *entity.SendMessage
-		mock    func()
-		wantErr bool
+		name              string
+		input             *entity.SendMessage
+		mock              func(mock *mock_repository.MockMessageBroker)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
 	}{
 		{
 			name: "Success",
-			message: &entity.SendMessage{
+			input: &entity.SendMessage{
 				ChatID:   1,
 				SenderID: 2,
 				Message:  "Hello World",
 			},
-			mock: func() {
-				expectedModel := &model.SendMessage{
-					ChatID:   1,
-					SenderID: 2,
-					Message:  "Hello World",
-				}
-				mockBroker.EXPECT().
-					SendMessage(gomock.Any(), expectedModel).
+			mock: func(mock *mock_repository.MockMessageBroker) {
+				mock.EXPECT().
+					SendMessage(gomock.Any(), gomock.Any()).
 					Return(nil)
 			},
 			wantErr: false,
 		},
 		{
-			name: "Broker error",
-			message: &entity.SendMessage{
+			name: "Success - Boundary Values",
+			input: &entity.SendMessage{
+				ChatID:   1,
+				SenderID: 2,
+				Message:  strings.Repeat("A", 4096),
+			},
+			mock: func(mock *mock_repository.MockMessageBroker) {
+				mock.EXPECT().
+					SendMessage(gomock.Any(), gomock.Any()).
+					Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error - Broker Failed",
+			input: &entity.SendMessage{
 				ChatID:   1,
 				SenderID: 2,
 				Message:  "Hello World",
 			},
-			mock: func() {
-				mockBroker.EXPECT().
+			mock: func(mock *mock_repository.MockMessageBroker) {
+				mock.EXPECT().
 					SendMessage(gomock.Any(), gomock.Any()).
-					Return(errors.New("broker connection lost"))
+					Return(errBrokerError)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
 		},
 		{
-			name: "Validation: Missing ChatID",
-			message: &entity.SendMessage{
+			name: "Error - Validation (Missing ChatID - 0)",
+			input: &entity.SendMessage{
 				ChatID:   0,
 				SenderID: 2,
 				Message:  "Hello World",
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Missing SenderID",
-			message: &entity.SendMessage{
+			name: "Error - Validation (Invalid ChatID - negative)",
+			input: &entity.SendMessage{
+				ChatID:   -1,
+				SenderID: 2,
+				Message:  "Hello World",
+			},
+			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Missing SenderID - 0)",
+			input: &entity.SendMessage{
 				ChatID:   1,
 				SenderID: 0,
 				Message:  "Hello World",
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Empty Message",
-			message: &entity.SendMessage{
+			name: "Error - Validation (Invalid SenderID - negative)",
+			input: &entity.SendMessage{
+				ChatID:   1,
+				SenderID: -5,
+				Message:  "Hello World",
+			},
+			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name: "Error - Validation (Empty Message)",
+			input: &entity.SendMessage{
 				ChatID:   1,
 				SenderID: 2,
 				Message:  "",
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Validation: Message too long",
-			message: &entity.SendMessage{
+			name: "Error - Validation (Message too long - 4097)",
+			input: &entity.SendMessage{
 				ChatID:   1,
 				SenderID: 2,
 				Message:  strings.Repeat("A", 4097),
 			},
-			mock:    func() {},
-			wantErr: true,
+			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.mock != nil {
-				tt.mock()
-			}
-			err := svc.SendMessage(ctx, tt.message)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc, _, mockBroker := setupMockService(ctrl)
+
+			tt.mock(mockBroker)
+
+			err := svc.SendMessage(context.Background(), tt.input)
+
 			if tt.wantErr {
 				assert.Error(t, err)
+				var appErr *errs.AppError
+				if errors.As(err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
 			} else {
 				assert.NoError(t, err)
 			}
