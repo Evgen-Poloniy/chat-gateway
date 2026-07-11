@@ -1,11 +1,17 @@
 package pg_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	errDBQueryFailed = errors.New("db query failed")
+	errDBBindError   = errors.New("db bind error")
 )
 
 func setupMockDB(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock, func()) {

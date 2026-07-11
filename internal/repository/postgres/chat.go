@@ -171,9 +171,17 @@ func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64,
 	err := p.db.SelectContext(ctx, &chats, query, userID, limit, offset)
 	if err != nil {
 		return nil, errs.NewAppError(
-			errs.CodeUserNotFound,
+			errs.CodeQueryError,
 			fmt.Sprintf("database error: failed to get chats by user id: %d", userID),
 			fmt.Errorf("database error: %v", err),
+		)
+	}
+
+	if len(chats) == 0 {
+		return nil, errs.NewAppError(
+			errs.CodeChatNotFound,
+			fmt.Sprintf("database error: records about user chats with user_id '%d' not found", userID),
+			fmt.Errorf("database error: records about user chats with user_id '%d' not found", userID),
 		)
 	}
 
@@ -209,7 +217,7 @@ func (p *PostgresRepository) UpdateChat(ctx context.Context, chat *model.UpdateC
 	if err := p.db.QueryRowxContext(ctx, boundQuery, args...).StructScan(chat); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errs.NewAppError(
-				errs.CodeUserNotFound,
+				errs.CodeChatNotFound,
 				fmt.Sprintf("database error: record about chat with chat_id '%d' not found", chat.ChatID),
 				fmt.Errorf("database error: record about chat with chat_id '%d' not found", chat.ChatID),
 			)

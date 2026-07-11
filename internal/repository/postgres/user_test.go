@@ -3,7 +3,6 @@ package pg_test
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"regexp"
 	"testing"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
+	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,10 +26,11 @@ func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
         WHERE username = $1`
 
 	tests := []struct {
-		name    string
-		input   string
-		mock    func(mock sqlmock.Sqlmock)
-		wantErr bool
+		name              string
+		input             string
+		mock              func(mock sqlmock.Sqlmock)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
 	}{
 		{
 			name:  "Success",
@@ -45,24 +46,26 @@ func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:  "Not Found",
+			name:  "Error - Not Found",
 			input: username,
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
 					WithArgs(username).
 					WillReturnError(sql.ErrNoRows)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUserNotFound,
 		},
 		{
-			name:  "Query Error",
+			name:  "Error - Query Failed",
 			input: username,
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
 					WithArgs(username).
-					WillReturnError(errors.New("db connection failed"))
+					WillReturnError(errDBQueryFailed)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
 		},
 	}
 
@@ -78,6 +81,10 @@ func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
 				assert.Nil(t, user)
 			} else {
 				assert.NoError(t, err)
@@ -101,10 +108,11 @@ func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
         WHERE id = $1`
 
 	tests := []struct {
-		name    string
-		input   int64
-		mock    func(mock sqlmock.Sqlmock)
-		wantErr bool
+		name              string
+		input             int64
+		mock              func(mock sqlmock.Sqlmock)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
 	}{
 		{
 			name:  "Success",
@@ -120,24 +128,26 @@ func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:  "Not Found",
+			name:  "Error - Not Found",
 			input: userID,
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
 					WithArgs(userID).
 					WillReturnError(sql.ErrNoRows)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUserNotFound,
 		},
 		{
-			name:  "Query Error",
+			name:  "Error - Query Failed",
 			input: userID,
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
 					WithArgs(userID).
-					WillReturnError(errors.New("db query failed"))
+					WillReturnError(errDBQueryFailed)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
 		},
 	}
 
@@ -153,6 +163,10 @@ func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
 				assert.Nil(t, user)
 			} else {
 				assert.NoError(t, err)
@@ -169,13 +183,16 @@ func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 func TestPostgresRepository_CreateUser(t *testing.T) {
 	now := time.Now()
 
-	query := `INSERT INTO users (username, email, first_name, last_name, birth_date, gender) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, created_at`
+	query := `INSERT INTO users
+		(username, email, first_name, last_name, birth_date, gender)
+		VALUES (?, ?, ?, ?, ?, ?) RETURNING id, created_at`
 
 	tests := []struct {
-		name    string
-		input   *model.User
-		mock    func(mock sqlmock.Sqlmock, user *model.User)
-		wantErr bool
+		name              string
+		input             *model.User
+		mock              func(mock sqlmock.Sqlmock, user *model.User)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
 	}{
 		{
 			name: "Success",
@@ -189,10 +206,28 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 			},
 			mock: func(mock sqlmock.Sqlmock, user *model.User) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(user.Username, *user.Email, *user.FirstName, *user.LastName, *user.BirthDate, *user.Gender).
+					WithArgs(user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(1, now))
 			},
 			wantErr: false,
+		},
+		{
+			name: "Error - Bind Named Params",
+			input: &model.User{
+				Username:  "newuser",
+				Email:     ptr("new@test.com"),
+				FirstName: ptr("New"),
+				LastName:  ptr("User"),
+				BirthDate: &now,
+				Gender:    ptr("female"),
+			},
+			mock: func(mock sqlmock.Sqlmock, user *model.User) {
+				mock.ExpectQuery("INSERT INTO users *").
+					WithArgs(user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
+					WillReturnError(errDBBindError)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
 		},
 		{
 			name: "Error - Unique Violation",
@@ -210,10 +245,11 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 					Message: "duplicate key value violates unique constraint",
 				}
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(user.Username, *user.Email, *user.FirstName, *user.LastName, *user.BirthDate, *user.Gender).
+					WithArgs(user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
 					WillReturnError(pgErr)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUniqueViolation,
 		},
 		{
 			name: "Error - Query Failed",
@@ -227,10 +263,11 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 			},
 			mock: func(mock sqlmock.Sqlmock, user *model.User) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(user.Username, *user.Email, *user.FirstName, *user.LastName, *user.BirthDate, *user.Gender).
-					WillReturnError(errors.New("generic db error"))
+					WithArgs(user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
+					WillReturnError(errDBQueryFailed)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
 		},
 	}
 
@@ -246,6 +283,10 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, int64(1), tt.input.UserID)
@@ -260,13 +301,21 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 func TestPostgresRepository_UpdateUser(t *testing.T) {
 	now := time.Now()
 
-	expectedQuery := `UPDATE users SET username = COALESCE(?, username), email = COALESCE(?, email), first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), birth_date = COALESCE(?, birth_date), gender = COALESCE(?, gender) WHERE id = ?`
+	expectedQuery := `UPDATE users SET
+		username = COALESCE(?, username),
+		email = COALESCE(?, email),
+		first_name = COALESCE(?, first_name),
+		last_name = COALESCE(?, last_name),
+		birth_date = COALESCE(?, birth_date),
+		gender = COALESCE(?, gender)
+		WHERE id = ?`
 
 	tests := []struct {
-		name    string
-		input   *model.UpdateUser
-		mock    func(mock sqlmock.Sqlmock, user *model.UpdateUser)
-		wantErr bool
+		name              string
+		input             *model.UpdateUser
+		mock              func(mock sqlmock.Sqlmock, user *model.UpdateUser)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
 	}{
 		{
 			name: "Success",
@@ -281,12 +330,12 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 			},
 			mock: func(mock sqlmock.Sqlmock, user *model.UpdateUser) {
 				rows := sqlmock.NewRows([]string{"username", "email", "first_name", "last_name", "birth_date", "gender", "created_at"}).
-					AddRow(*user.Username, *user.Email, *user.FirstName, *user.LastName, *user.BirthDate, *user.Gender, now)
+					AddRow(user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender, now)
 
 				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
 					WithArgs(
-						*user.Username, *user.Email, *user.FirstName,
-						*user.LastName, *user.BirthDate, *user.Gender, user.UserID,
+						user.Username, user.Email, user.FirstName,
+						user.LastName, user.BirthDate, user.Gender, user.UserID,
 					).
 					WillReturnRows(rows)
 			},
@@ -310,12 +359,13 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 				}
 				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
 					WithArgs(
-						*user.Username, *user.Email, *user.FirstName,
-						*user.LastName, *user.BirthDate, *user.Gender, user.UserID,
+						user.Username, user.Email, user.FirstName,
+						user.LastName, user.BirthDate, user.Gender, user.UserID,
 					).
 					WillReturnError(pgErr)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUniqueViolation,
 		},
 		{
 			name: "Error - Query Failed",
@@ -331,12 +381,57 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 			mock: func(mock sqlmock.Sqlmock, user *model.UpdateUser) {
 				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
 					WithArgs(
-						*user.Username, *user.Email, *user.FirstName,
-						*user.LastName, *user.BirthDate, *user.Gender, user.UserID,
+						user.Username, user.Email, user.FirstName,
+						user.LastName, user.BirthDate, user.Gender, user.UserID,
 					).
-					WillReturnError(errors.New("generic db error"))
+					WillReturnError(errDBQueryFailed)
 			},
-			wantErr: true,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+		{
+			name: "Error - Bind Named Params",
+			input: &model.UpdateUser{
+				UserID:    1,
+				Username:  ptr("updateduser"),
+				Email:     ptr("updated@test.com"),
+				FirstName: ptr("Update"),
+				LastName:  ptr("User"),
+				BirthDate: &now,
+				Gender:    ptr("male"),
+			},
+			mock: func(mock sqlmock.Sqlmock, user *model.UpdateUser) {
+				mock.ExpectQuery("UPDATE users SET *").
+					WithArgs(
+						user.Username, user.Email, user.FirstName,
+						user.LastName, user.BirthDate, user.Gender, user.UserID,
+					).
+					WillReturnError(errDBBindError)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+		{
+			name: "Error - Not Found",
+			input: &model.UpdateUser{
+				UserID:    1,
+				Username:  ptr("updateduser"),
+				Email:     ptr("updated@test.com"),
+				FirstName: ptr("Update"),
+				LastName:  ptr("User"),
+				BirthDate: &now,
+				Gender:    ptr("male"),
+			},
+			mock: func(mock sqlmock.Sqlmock, user *model.UpdateUser) {
+				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
+					WithArgs(
+						user.Username, user.Email, user.FirstName,
+						user.LastName, user.BirthDate, user.Gender, user.UserID,
+					).
+					WillReturnError(sql.ErrNoRows)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUserNotFound,
 		},
 	}
 
@@ -352,6 +447,10 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
 			} else {
 				assert.NoError(t, err)
 			}
