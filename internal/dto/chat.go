@@ -63,7 +63,6 @@ type UpdateGroupChatResp struct {
 
 // SendMessage represents DTO for message sending
 type SendMessageReq struct {
-	ChatID   int64  `json:"chat_id"`
 	SenderID int64  `json:"sender_id"`
 	Message  string `json:"message" binding:"required"`
 }

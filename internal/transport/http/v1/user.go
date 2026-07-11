@@ -115,9 +115,9 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
 }
 
-// GetUserDataByUsername represents searching all data about user from the messenger database.
-func (h *Handler) GetUserDataByUsername(c *gin.Context) {
-	username := c.Param("username")
+// SearchUser represents searching all data about user from the messenger database.
+func (h *Handler) SearchUser(c *gin.Context) {
+	username := c.Query("username")
 	if username == "" {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,

@@ -18,18 +18,18 @@ func NewRouter(router *gin.Engine, handler *Handler, apiKeyHash []byte) {
 	{
 		chats := protected.Group("/chats")
 		{
-			chats.GET("/search/:user_id", handler.GetChatsByUserID)
-			chats.POST("/create/direct", handler.CreateDirectChat)
-			chats.POST("/create/group", handler.CreateGroupChat)
-			chats.PATCH("/update/:chat_id", handler.UpdateGroupChat)
-			chats.POST("/send", handler.SendMessage)
+			chats.GET("/:user_id", handler.GetChatsByUserID)
+			chats.POST("/direct", handler.CreateDirectChat)
+			chats.POST("/group", handler.CreateGroupChat)
+			chats.PATCH("/:chat_id", handler.UpdateGroupChat)
+			chats.POST("/:chat_id/messages", handler.SendMessage)
 		}
 
 		users := protected.Group("/users")
 		{
-			users.GET("/search/:username", handler.GetUserDataByUsername)
-			users.GET("/search/:user_id", handler.GetUserDataByUserID)
-			users.PATCH("/update/:user_id", handler.UpdateUser)
+			users.GET("", handler.SearchUser)
+			users.GET("/:user_id", handler.GetUserDataByUserID)
+			users.PATCH("/:user_id", handler.UpdateUser)
 		}
 	}
 }

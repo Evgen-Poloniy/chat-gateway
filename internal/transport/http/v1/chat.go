@@ -251,6 +251,28 @@ func (h *Handler) UpdateGroupChat(c *gin.Context) {
 
 // SendMessage sends message into target chat.
 func (h *Handler) SendMessage(c *gin.Context) {
+	chatIdParam := c.Param("chat_id")
+	if chatIdParam == "" {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "bad_request",
+			Message:    errs.ErrChatIdIsRequired.Error(),
+			Err:        errs.ErrChatIdIsRequired,
+		})
+		return
+	}
+
+	chatID, err := strconv.ParseInt(chatIdParam, 10, 64)
+	if err != nil {
+		c.Error(&errs.HttpError{
+			StatusCode: http.StatusBadRequest,
+			Code:       "bad_request",
+			Message:    "failed to convert parameter 'chat_id' to int64",
+			Err:        fmt.Errorf("failed to convert parameter 'chat_id' to int64: %v", err),
+		})
+		return
+	}
+
 	var req dto.SendMessageReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(&errs.HttpError{
@@ -262,7 +284,7 @@ func (h *Handler) SendMessage(c *gin.Context) {
 	}
 
 	message := entity.SendMessage{
-		ChatID:   req.ChatID,
+		ChatID:   chatID,
 		SenderID: req.SenderID,
 		Message:  req.Message,
 	}
@@ -273,7 +295,7 @@ func (h *Handler) SendMessage(c *gin.Context) {
 	}
 
 	resp := dto.SendMessageResp{
-		ChatID:   req.ChatID,
+		ChatID:   chatID,
 		SenderID: req.SenderID,
 		Status:   "sended",
 	}
