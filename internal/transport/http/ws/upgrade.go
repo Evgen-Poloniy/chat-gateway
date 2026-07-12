@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
@@ -16,30 +15,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Hub manages WebSocket connections
-type Hub struct {
-	upgrader websocket.Upgrader
-	mu       sync.RWMutex
-	conns    map[int]*websocket.Conn
-}
-
-var hub = &Hub{
-	upgrader: websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	},
-	conns: make(map[int]*websocket.Conn),
-}
-
 // HandleWebSocketUpgrade upgrades an HTTP connection to a WebSocket connection.
-func WebSocketUpgrade(c *gin.Context, logger *logrus.Logger) {
+func (h *Handler) WebSocketUpgrade(c *gin.Context) {
 	id := uuid.New().ID()
 	start := time.Now()
 
-	entry := logger.WithFields(map[string]interface{}{
+	entry := h.logger.WithFields(map[string]interface{}{
 		"id":     id,
 		"method": c.Request.Method,
 		"path":   c.Request.URL.Path,
@@ -49,34 +30,28 @@ func WebSocketUpgrade(c *gin.Context, logger *logrus.Logger) {
 
 	queryUserID := c.Query("user_id")
 	if queryUserID == "" {
-		abortWithError(c, logger, http.StatusBadRequest, "bad_request", "user_id is required", start, id)
+		abortWithError(c, h.logger, http.StatusBadRequest, "bad_request", "user_id is required", start, id)
 		return
 	}
 
-	userID, err := strconv.Atoi(queryUserID)
+	userID, err := strconv.ParseInt(queryUserID, 10, 64)
 	if err != nil {
-		abortWithError(c, logger, http.StatusBadRequest, "bad_request", "user_id must be an integer", start, id)
+		abortWithError(c, h.logger, http.StatusBadRequest, "bad_request", "user_id must be an integer", start, id)
 		return
 	}
 
-	conn, err := hub.upgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, err := h.wsHub.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		message := fmt.Sprintf("failed to upgrade connection to websocket: %v", err)
-		abortWithError(c, logger, http.StatusInternalServerError, "failed_to_upgrade_to_websocket_connection", message, start, id)
+		abortWithError(c, h.logger, http.StatusInternalServerError, "failed_to_upgrade_to_websocket_connection", message, start, id)
 		return
 	}
 
-	hub.mu.Lock()
-	hub.conns[userID] = conn
-	hub.mu.Unlock()
+	h.wsHub.register(userID, conn)
 
 	defer func() {
-		hub.mu.Lock()
-		delete(hub.conns, userID)
-		hub.mu.Unlock()
-
-		if err := conn.Close(); err != nil {
-			logger.WithFields(map[string]interface{}{
+		if err := h.wsHub.unregister(userID, conn); err != nil {
+			h.logger.WithFields(map[string]interface{}{
 				"id":         id,
 				"method":     c.Request.Method,
 				"path":       c.Request.URL.Path,
@@ -121,7 +96,7 @@ func WebSocketUpgrade(c *gin.Context, logger *logrus.Logger) {
 
 			switch closeCode {
 			case websocket.CloseNormalClosure, websocket.CloseGoingAway:
-				logger.WithFields(map[string]interface{}{
+				h.logger.WithFields(map[string]interface{}{
 					"id":         id,
 					"method":     c.Request.Method,
 					"path":       c.Request.URL.Path,
@@ -129,7 +104,7 @@ func WebSocketUpgrade(c *gin.Context, logger *logrus.Logger) {
 					"close_code": closeCode,
 				}).Info(message)
 			default:
-				logger.WithFields(map[string]interface{}{
+				h.logger.WithFields(map[string]interface{}{
 					"id":         id,
 					"method":     c.Request.Method,
 					"path":       c.Request.URL.Path,

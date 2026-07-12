@@ -31,5 +31,10 @@ func NewRouter(router *gin.Engine, handler *Handler, apiKeyHash []byte) {
 			users.GET("/:user_id", handler.GetUserDataByUserID)
 			users.PATCH("/:user_id", handler.UpdateUser)
 		}
+
+		internal := protected.Group("/internal")
+		{
+			internal.POST("/messages/dispatch", handler.DispatchMessage)
+		}
 	}
 }

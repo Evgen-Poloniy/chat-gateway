@@ -8,7 +8,6 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/middleware"
-	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/ws"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,7 +15,7 @@ import (
 )
 
 // NewRouter initializes HTTP API router and connects middlewares on target routers.
-func NewRouter(logger *logrus.Logger, config *config.CORSConfig) *gin.Engine {
+func NewRouter(config *config.CORSConfig, logger *logrus.Logger) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.New()
@@ -41,13 +40,6 @@ func NewRouter(logger *logrus.Logger, config *config.CORSConfig) *gin.Engine {
 		middleware.CORS(config),
 		middleware.SecureHeaders(),
 	)
-
-	wsRouter := router.Group("/")
-	{
-		wsRouter.GET("/ws", func(c *gin.Context) {
-			ws.WebSocketUpgrade(c, logger)
-		})
-	}
 
 	api := router.Group("/")
 	api.Use(

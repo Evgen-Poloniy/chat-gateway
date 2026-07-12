@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/ws"
 )
 
 // MessengerService represents interface for work with messenger business logic.
@@ -42,10 +43,12 @@ type MessengerService interface {
 
 type Handler struct {
 	messenger MessengerService
+	wsHub     *ws.Hub
 }
 
-func NewHandler(messenger MessengerService) *Handler {
+func NewHandler(messenger MessengerService, wsHub *ws.Hub) *Handler {
 	return &Handler{
 		messenger: messenger,
+		wsHub:     wsHub,
 	}
 }

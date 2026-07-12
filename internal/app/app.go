@@ -17,6 +17,7 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger"
 	router "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http"
 	v1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/v1"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/ws"
 
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/database"
 	logs "github.com/Evgen-Poloniy/chat-gateway/pkg/logger"
@@ -82,9 +83,12 @@ func Run() {
 	messengerRepository := pg.NewPostgresRepository(db)
 	messageBroker := kf.NewKafkaRepository(producer)
 	messenger := messenger.NewMessengerService(messengerRepository, messageBroker)
-	router := router.NewRouter(logger, &config.CORS)
-	v1Handler := v1.NewHandler(messenger)
+	router := router.NewRouter(&config.CORS, logger)
+	wsHub := ws.NewHub()
+	v1Handler := v1.NewHandler(messenger, wsHub)
+	wsHandler := ws.NewHandler(wsHub, logger)
 	v1.NewRouter(router, v1Handler, apiKeyHash)
+	ws.NewRouter(router, wsHandler)
 
 	var wg sync.WaitGroup
 

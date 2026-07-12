@@ -79,4 +79,5 @@ var (
 	ErrPageRequiredBeGreater  = errors.New("query parameter 'page' required be greater or equals then 1")
 	ErrLimitRequiredBeGreater = errors.New("query parameter 'limit' required be greater or equals then 1")
 	ErrLimitRequiredBeLess    = errors.New("query parameter 'limit' required be less or equals then 100")
+	ErrUserIsOffline          = errors.New("user is offline")
 )
