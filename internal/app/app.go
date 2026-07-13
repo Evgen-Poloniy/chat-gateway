@@ -13,11 +13,14 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 	kf "github.com/Evgen-Poloniy/chat-gateway/internal/repository/kafka"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
+	grpcserver "github.com/Evgen-Poloniy/chat-gateway/internal/server/grpc"
 	httpserver "github.com/Evgen-Poloniy/chat-gateway/internal/server/http"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger"
+	grpcv1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/grpc/v1"
 	router "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http"
 	v1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/v1"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/ws"
+	"google.golang.org/grpc"
 
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/database"
 	logs "github.com/Evgen-Poloniy/chat-gateway/pkg/logger"
@@ -90,16 +93,32 @@ func Run() {
 	v1.NewRouter(router, v1Handler, apiKeyHash)
 	ws.NewRouter(router, wsHandler)
 
+	grpcServer, err := grpcserver.NewServer(config.Server.GrpcPort, grpcv1.NewHandler(wsHub), logger)
+	if err != nil {
+		logger.Errorf("grpc server error: %v", err)
+	}
+
+	httpServer := httpserver.NewServer(&config.Server, router)
+
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	server := httpserver.NewServer(&config.Server, router)
 	go func() {
 		defer wg.Done()
 
-		logger.Infof("server is running on %s:%s", config.Server.Host, config.Server.Port)
-		if err := server.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Errorf("server error: %v", err)
+		logger.Infof("grpc server is running on :%d", config.Server.GrpcPort)
+		if err := grpcServer.Start(); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			logger.Errorf("grpc server error: %v", err)
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		logger.Infof("http server is running on %s:%d", config.Server.Host, config.Server.Port)
+		if err := httpServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Errorf("http server error: %v", err)
 		}
 	}()
 
@@ -115,7 +134,7 @@ func Run() {
 	defer cancel()
 
 	logger.Info("shutting down server")
-	if err := server.Shutdown(ctx); err != nil {
+	if err := httpServer.Shutdown(ctx); err != nil {
 		logger.Errorf("server forced to shutdown: %v", err)
 	}
 

@@ -29,7 +29,8 @@ const (
 // Config with tags from cleanenv library.
 type ServerConfig struct {
 	Host                    string        `env:"API_HOST" env-required:"true"`
-	Port                    string        `env:"API_PORT" env-required:"true"`
+	Port                    int           `env:"API_PORT" env-required:"true"`
+	GrpcPort                int           `env:"GRPC_API_PORT" env-required:"true"`
 	MaxHeaderBytes          int           `yaml:"max_header_bytes" env-default:"1048576"`
 	ReadTimeout             time.Duration `yaml:"read_timeout" env-default:"4s"`
 	WriteTimeout            time.Duration `yaml:"write_timeout" env-default:"10s"`

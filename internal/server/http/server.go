@@ -17,7 +17,7 @@ type Server struct {
 func NewServer(config *config.ServerConfig, handler http.Handler) *Server {
 	return &Server{
 		httpServer: &http.Server{
-			Addr:              fmt.Sprintf("%s:%s", config.Host, config.Port),
+			Addr:              fmt.Sprintf("%s:%d", config.Host, config.Port),
 			MaxHeaderBytes:    config.MaxHeaderBytes,
 			Handler:           handler,
 			ReadTimeout:       config.ReadTimeout,
