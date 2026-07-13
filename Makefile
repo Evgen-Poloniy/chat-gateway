@@ -1,11 +1,12 @@
 TARGET := chat-gateway
 CGO_ENABLED := 1
+GOGC := 100
 GOOS := linux
 GOARCH := amd64
 CMD_API_DIR := cmd/chat-gateway
 BIN_DIR := bin
 
-GO_ENV_VAR := CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
+GO_ENV_VAR := GOGC=$(GOGC) CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
 FLAGS := -ldflags="-s -w"
 
 all: $(TARGET)
