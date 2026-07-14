@@ -13,14 +13,12 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 	kf "github.com/Evgen-Poloniy/chat-gateway/internal/repository/kafka"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
-	grpcserver "github.com/Evgen-Poloniy/chat-gateway/internal/server/grpc"
+	rds "github.com/Evgen-Poloniy/chat-gateway/internal/repository/redis"
 	httpserver "github.com/Evgen-Poloniy/chat-gateway/internal/server/http"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger"
-	grpcv1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/grpc/v1"
 	router "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http"
 	v1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/v1"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/ws"
-	"google.golang.org/grpc"
 
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/database"
 	logs "github.com/Evgen-Poloniy/chat-gateway/pkg/logger"
@@ -83,9 +81,23 @@ func Run() {
 		producer.Close()
 	}()
 
+	rdb, err := database.NewRedisClient(&config.Redis)
+	if err != nil {
+		logger.Fatalf("error: %v", err)
+	}
+	defer func() {
+		err := rdb.Close()
+		if err != nil {
+			logger.Errorf("error when closing redis: %v", err)
+		}
+
+		logger.Info("redis successful closed")
+	}()
+
 	messengerRepository := pg.NewPostgresRepository(db)
 	messageBroker := kf.NewKafkaRepository(producer)
-	messenger := messenger.NewMessengerService(messengerRepository, messageBroker)
+	messengerCache := rds.NewRedisCache(rdb)
+	messenger := messenger.NewMessengerService(messengerRepository, messageBroker, messengerCache)
 	router := router.NewRouter(&config.CORS, logger)
 	wsHub := ws.NewHub()
 	v1Handler := v1.NewHandler(messenger, wsHub)
@@ -93,24 +105,9 @@ func Run() {
 	v1.NewRouter(router, v1Handler, apiKeyHash)
 	ws.NewRouter(router, wsHandler)
 
-	grpcServer, err := grpcserver.NewServer(config.Server.GrpcPort, grpcv1.NewHandler(wsHub), logger)
-	if err != nil {
-		logger.Errorf("grpc server error: %v", err)
-	}
-
 	httpServer := httpserver.NewServer(&config.Server, router)
 
 	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		logger.Infof("grpc server is running on :%d", config.Server.GrpcPort)
-		if err := grpcServer.Start(); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
-			logger.Errorf("grpc server error: %v", err)
-		}
-	}()
 
 	wg.Add(1)
 	go func() {

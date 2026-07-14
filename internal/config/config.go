@@ -90,6 +90,16 @@ type KafkaConfig struct {
 	FlashTimeout               int    `yaml:"flash_timeout"`
 }
 
+// RedisConfig is the structure for save cache config
+type RedisConfig struct {
+	Host         string        `env:"REDIS_HOST" env-required:"true"`
+	Port         string        `env:"REDIS_PORT" env-required:"true"`
+	Password     string        `env:"REDIS_PASSWORD" env-required:"true"`
+	DialTimeout  time.Duration `yaml:"dial_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
+	ReadTimeout  time.Duration `yaml:"read_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
+	WriteTimeout time.Duration `yaml:"write_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
+}
+
 // Config represents dataclass with all configs.
 type Config struct {
 	Server   ServerConfig   `yaml:"server"`
@@ -97,6 +107,7 @@ type Config struct {
 	CORS     CORSConfig     `yaml:"cors"`
 	Postgres PostgresConfig `yaml:"postgres"`
 	Kafka    KafkaConfig    `yaml:"kafka"`
+	Redis    RedisConfig    `yaml:"redis"`
 }
 
 // Load config from config/config.yaml.

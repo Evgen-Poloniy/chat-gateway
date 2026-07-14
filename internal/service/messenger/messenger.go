@@ -53,18 +53,28 @@ type MessageBroker interface {
 	SendMessage(ctx context.Context, message *model.SendMessage) error
 }
 
+// MessengerCache represents interface for work with the messenger cache
+type MessengerCache interface {
+}
+
 // MessengerService represents implementation of messenger interface.
 type MessengerService struct {
 	validate            *validator.Validate
 	messengerRepository MessengerRepository
 	messageBroker       MessageBroker
+	messengerCache      MessengerCache
 }
 
-func NewMessengerService(messengerRepository MessengerRepository, messageBroker MessageBroker) *MessengerService {
+func NewMessengerService(
+	messengerRepository MessengerRepository,
+	messageBroker MessageBroker,
+	messengerCache MessengerCache,
+) *MessengerService {
 	return &MessengerService{
 		validate:            validator.New(),
 		messengerRepository: messengerRepository,
 		messageBroker:       messageBroker,
+		messengerCache:      messengerCache,
 	}
 }
 

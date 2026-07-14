@@ -78,3 +78,8 @@ kafka:
 
   # Timeout for flush messages into broker (s)
   flash_timeout: 15
+
+redis:
+  dial_timeout: 1s
+  read_timeout: 1s
+  write_timeout: 1s
