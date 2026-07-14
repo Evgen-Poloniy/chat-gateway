@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
+	"github.com/google/uuid"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/sirupsen/logrus"
@@ -45,14 +46,30 @@ func NewKafkaProducer(config *config.KafkaConfig, logger *logrus.Logger) (*kafka
 			switch ev := e.(type) {
 			case *kafka.Message:
 				if ev.TopicPartition.Error != nil {
-					logger.Printf("[KAFKA ERROR] Delivery failed: %v\n", ev.TopicPartition.Error)
+					logger.WithFields(map[string]interface{}{
+						"id":        uuid.NewString(),
+						"topic":     getTopicName(ev.TopicPartition.Topic),
+						"partition": ev.TopicPartition.Partition,
+						"code":      "kafka_error",
+					}).Error(fmt.Sprintf("kafka delivery error: %v", ev.TopicPartition.Error))
 				} else {
-					logger.Printf("[KAFKA SUCCESS] Delivered message to %s [%d] at offset %s\n",
-						*ev.TopicPartition.Topic, ev.TopicPartition.Partition, ev.TopicPartition.Offset)
+					logger.WithFields(map[string]interface{}{
+						"id":        uuid.NewString(),
+						"topic":     getTopicName(ev.TopicPartition.Topic),
+						"partition": ev.TopicPartition.Partition,
+						"offset":    ev.TopicPartition.Offset,
+					}).Info("kafka message delivered")
 				}
 			}
 		}
 	}()
 
 	return p, nil
+}
+
+func getTopicName(topic *string) string {
+	if topic == nil {
+		return "unknown"
+	}
+	return *topic
 }
