@@ -13,7 +13,7 @@ const (
 	MessageTopic = "message-topic"
 )
 
-func NewKafkaProducer(config *config.MessageBrokerConfig, logger *logrus.Logger) (*kafka.Producer, error) {
+func NewKafkaProducer(config *config.KafkaConfig, logger *logrus.Logger) (*kafka.Producer, error) {
 	configMap := &kafka.ConfigMap{
 		"bootstrap.servers":                     config.BootstrapServers,
 		"acks":                                  config.Acks,

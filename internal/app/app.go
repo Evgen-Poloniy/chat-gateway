@@ -60,7 +60,7 @@ func Run() {
 		}
 	}()
 
-	db, err := database.NewPostgreSQL(&config.Database)
+	db, err := database.NewPostgreSQL(&config.Postgres)
 	if err != nil {
 		logger.Errorf("database error: %v", err)
 	}
@@ -70,12 +70,12 @@ func Run() {
 		}
 	}()
 
-	producer, err := database.NewKafkaProducer(&config.MessageBroker, logger)
+	producer, err := database.NewKafkaProducer(&config.Kafka, logger)
 	if err != nil {
 		logger.Errorf("message broker error: %v", err)
 	}
 	defer func() {
-		unflushedCount := producer.Flush(config.MessageBroker.FlashTimeout * 1000)
+		unflushedCount := producer.Flush(config.Kafka.FlashTimeout * 1000)
 		if unflushedCount > 0 {
 			logger.Warnf("warning: %d messages were not flushed and might be lost", unflushedCount)
 		}

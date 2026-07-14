@@ -56,8 +56,8 @@ type CORSConfig struct {
 	MaxAge           time.Duration `yaml:"max_age" validate:"required,gte=1m,lte=24h"`
 }
 
-// Database config from env and config.yaml.
-type DatabaseConfig struct {
+// PostgresConfig represents config from env and config.yaml.
+type PostgresConfig struct {
 	Host                string        `env:"DB_HOST" env-required:"true"`
 	Port                string        `env:"DB_PORT" env-required:"true"`
 	Username            string        `env:"DB_USER" env-required:"true"`
@@ -70,8 +70,8 @@ type DatabaseConfig struct {
 	ConnMaxIdleLifetime time.Duration `yaml:"conn_max_idle_lifetime"`
 }
 
-// Message broker config from env and config.yaml.
-type MessageBrokerConfig struct {
+// KafkaConfig represents broker config from env and config.yaml.
+type KafkaConfig struct {
 	BootstrapServers           string `env:"KAFKA_BOOTSTRAP_SERVERS" env-required:"true"`
 	User                       string `env:"KAFKA_USER" env-required:"true"`
 	Password                   string `env:"KAFKA_PASSWORD" env-required:"true"`
@@ -90,13 +90,13 @@ type MessageBrokerConfig struct {
 	FlashTimeout               int    `yaml:"flash_timeout"`
 }
 
-// Dataclass with all configs.
+// Config represents dataclass with all configs.
 type Config struct {
-	Server        ServerConfig        `yaml:"server"`
-	Logger        LoggerConfig        `yaml:"logger"`
-	CORS          CORSConfig          `yaml:"cors"`
-	Database      DatabaseConfig      `yaml:"database"`
-	MessageBroker MessageBrokerConfig `yaml:"message-broker"`
+	Server   ServerConfig   `yaml:"server"`
+	Logger   LoggerConfig   `yaml:"logger"`
+	CORS     CORSConfig     `yaml:"cors"`
+	Postgres PostgresConfig `yaml:"postgres"`
+	Kafka    KafkaConfig    `yaml:"kafka"`
 }
 
 // Load config from config/config.yaml.

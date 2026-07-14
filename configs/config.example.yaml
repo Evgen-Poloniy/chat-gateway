@@ -31,14 +31,14 @@ cors:
     - POST
   max_age: 24h
 
-# Database config
-database:
+# Postgres config
+postgres:
   max_open_conns: 25
   max_idle_conns: 25
   conn_max_lifetime: 5m # seconds, minutes
   conn_max_idle_lifetime: 2m # seconds, minutes
 
-message-broker:
+kafka:
   # Broker addresses
   bootstrap.servers: "localhost:9090"
 
