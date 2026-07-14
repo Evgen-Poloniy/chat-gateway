@@ -17,8 +17,11 @@ type MessengerService interface {
 	// GetUserDataByUsername represents searching all data about user from the messenger database.
 	GetUserDataByUsername(ctx context.Context, username string) (*entity.User, error)
 
-	//GetUserDataByUserID gets all data about user from the messenger database by user_id.
+	// GetUserDataByUserID gets all data about user from the messenger database by user_id.
 	GetUserDataByUserID(ctx context.Context, userID int64) (*entity.User, error)
+
+	// GetUserIDsByChatID gets user_id by all users who are in the chat.
+	GetUserIDsByChatID(ctx context.Context, chatID int64) ([]int64, error)
 
 	// UpdateUser updates data about user into messenger database.
 	UpdateUser(ctx context.Context, user *entity.UpdateUser) error

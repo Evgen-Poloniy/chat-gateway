@@ -67,6 +67,11 @@ func NewHttpError(code string, statusCode int, message string, err error) *HttpE
 	}
 }
 
+// Validation errors.
+var (
+	ErrInvalidChatID = errors.New("invalid chat_id")
+)
+
 // Transport errors.
 var (
 	ErrMissingAuthHeader      = errors.New("missing authentication header")

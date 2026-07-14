@@ -128,6 +128,21 @@ func (mr *MockMessengerRepositoryMockRecorder) GetUserDataByUsername(ctx, userna
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserDataByUsername", reflect.TypeOf((*MockMessengerRepository)(nil).GetUserDataByUsername), ctx, username)
 }
 
+// GetUserIDsByChatID mocks base method.
+func (m *MockMessengerRepository) GetUserIDsByChatID(ctx context.Context, chatID int64) ([]int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserIDsByChatID", ctx, chatID)
+	ret0, _ := ret[0].([]int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserIDsByChatID indicates an expected call of GetUserIDsByChatID.
+func (mr *MockMessengerRepositoryMockRecorder) GetUserIDsByChatID(ctx, chatID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserIDsByChatID", reflect.TypeOf((*MockMessengerRepository)(nil).GetUserIDsByChatID), ctx, chatID)
+}
+
 // UpdateGroupChat mocks base method.
 func (m *MockMessengerRepository) UpdateGroupChat(ctx context.Context, chat *model.UpdateGroupChat) error {
 	m.ctrl.T.Helper()

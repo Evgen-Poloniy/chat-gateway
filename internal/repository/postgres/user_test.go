@@ -298,6 +298,88 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 	}
 }
 
+func TestPostgresRepository_GetUserIDsByChatID(t *testing.T) {
+	query := `
+		SELECT user_id
+		FROM chat_members
+		WHERE chat_id = $1
+	`
+
+	tests := []struct {
+		name              string
+		chatID            int64
+		mock              func(mock sqlmock.Sqlmock)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
+	}{
+		{
+			name:   "Success",
+			chatID: 1,
+			mock: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"user_id"}).
+					AddRow(int64(10))
+
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WithArgs(int64(1)).
+					WillReturnRows(rows)
+			},
+			wantErr: false,
+		},
+		{
+			name:   "Error - Chats Not Found",
+			chatID: 1,
+			mock: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"user_id"})
+
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WithArgs(int64(1)).
+					WillReturnRows(rows)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeChatNotFound,
+		},
+		{
+			name:   "Error - Query Failed",
+			chatID: 1,
+			mock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WithArgs(1).
+					WillReturnError(errDBQueryFailed)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			repo := pg.NewPostgresRepository(db)
+			tt.mock(mock)
+
+			userIDs, err := repo.GetUserIDsByChatID(context.Background(), tt.chatID)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
+				assert.Nil(t, userIDs)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, userIDs)
+				require.Len(t, userIDs, 1)
+				assert.Equal(t, int64(10), userIDs[0])
+			}
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
 func TestPostgresRepository_UpdateUser(t *testing.T) {
 	now := time.Now()
 

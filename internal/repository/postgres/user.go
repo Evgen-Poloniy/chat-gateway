@@ -107,6 +107,35 @@ func (p *PostgresRepository) CreateUser(ctx context.Context, user *model.User) e
 	return nil
 }
 
+// GetUserIDsByChatID gets user_id by all users who are in the chat.
+func (p *PostgresRepository) GetUserIDsByChatID(ctx context.Context, chatID int64) ([]int64, error) {
+	query := `
+		SELECT user_id
+		FROM chat_members
+		WHERE chat_id = $1
+	`
+
+	var userIDs []int64
+
+	if err := p.db.SelectContext(ctx, &userIDs, query, chatID); err != nil {
+		return nil, errs.NewAppError(
+			errs.CodeQueryError,
+			fmt.Sprintf("database error: failed to get members for chat id: %d", chatID),
+			fmt.Errorf("database error: %v", err),
+		)
+	}
+
+	if len(userIDs) == 0 {
+		return nil, errs.NewAppError(
+			errs.CodeChatNotFound,
+			fmt.Sprintf("database error: no members found for chat id: %d", chatID),
+			fmt.Errorf("database error: chat %d has no registered members", chatID),
+		)
+	}
+
+	return userIDs, nil
+}
+
 // UpdateUser updates data about user into messenger database.
 func (p *PostgresRepository) UpdateUser(ctx context.Context, user *model.UpdateUser) error {
 	query := `

@@ -26,6 +26,9 @@ type MessengerRepository interface {
 	//GetUserDataByUserID gets all data about user from the messenger database by user_id.
 	GetUserDataByUserID(ctx context.Context, userID int64) (*model.User, error)
 
+	// GetUserIDsByChatID gets user_id by all users who are in the chat.
+	GetUserIDsByChatID(ctx context.Context, chatID int64) ([]int64, error)
+
 	// UpdateUser updates data about user into messenger database.
 	UpdateUser(ctx context.Context, user *model.UpdateUser) error
 

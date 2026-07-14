@@ -810,6 +810,119 @@ func TestMessengerService_CreateUser(t *testing.T) {
 	}
 }
 
+func TestMessengerService_GetUserIDsByChatID(t *testing.T) {
+	tests := []struct {
+		name              string
+		input             int64
+		mock              func(mock *mock_repository.MockMessengerRepository, input int64)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
+	}{
+		{
+			name:  "Success - Multiple Users",
+			input: 1,
+			mock: func(mock *mock_repository.MockMessengerRepository, input int64) {
+				mock.EXPECT().
+					GetUserIDsByChatID(gomock.Any(), input).
+					Return([]int64{1, 2, 3}, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name:  "Success - Single User",
+			input: 2,
+			mock: func(mock *mock_repository.MockMessengerRepository, input int64) {
+				mock.EXPECT().
+					GetUserIDsByChatID(gomock.Any(), input).
+					Return([]int64{5}, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name:  "Success - Empty Chat (No Users)",
+			input: 3,
+			mock: func(mock *mock_repository.MockMessengerRepository, input int64) {
+				mock.EXPECT().
+					GetUserIDsByChatID(gomock.Any(), input).
+					Return([]int64{}, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name:  "Error - Validation Failed (ChatID = 0)",
+			input: 0,
+			mock: func(mock *mock_repository.MockMessengerRepository, input int64) {
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name:  "Error - Validation Failed (ChatID < 0)",
+			input: -1,
+			mock: func(mock *mock_repository.MockMessengerRepository, input int64) {
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+		{
+			name:  "Error - Repository Query Failed",
+			input: 10,
+			mock: func(mock *mock_repository.MockMessengerRepository, input int64) {
+				mock.EXPECT().
+					GetUserIDsByChatID(gomock.Any(), input).
+					Return(nil, errRepoQueryError)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+		{
+			name:  "Error - Chat Not Found (if repo returns specific error)",
+			input: 999,
+			mock: func(mock *mock_repository.MockMessengerRepository, input int64) {
+				mock.EXPECT().
+					GetUserIDsByChatID(gomock.Any(), input).
+					Return(nil, errRepoUserNotFound)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUserNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc, mockRepo, _ := setupMockService(ctrl)
+
+			tt.mock(mockRepo, tt.input)
+
+			userIDs, err := svc.GetUserIDsByChatID(context.Background(), tt.input)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				var appErr *errs.AppError
+				if errors.As(err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
+				assert.Nil(t, userIDs)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, userIDs)
+				if tt.name == "Success - Multiple Users" {
+					assert.Len(t, userIDs, 3)
+					assert.ElementsMatch(t, []int64{1, 2, 3}, userIDs)
+				} else if tt.name == "Success - Single User" {
+					assert.Len(t, userIDs, 1)
+					assert.Equal(t, int64(5), userIDs[0])
+				} else if tt.name == "Success - Empty Chat (No Users)" {
+					assert.Empty(t, userIDs)
+				}
+			}
+		})
+	}
+}
+
 func TestMessengerService_UpdateUser(t *testing.T) {
 	now := time.Now()
 

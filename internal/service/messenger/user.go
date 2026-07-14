@@ -2,9 +2,11 @@ package messenger
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
+	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 )
 
 // GetUserDataByUsername represents searching all data about user from the messenger database.
@@ -74,6 +76,24 @@ func (m *MessengerService) CreateUser(ctx context.Context, user *entity.User) er
 	user.CreatedAt = userModel.CreatedAt
 
 	return nil
+}
+
+// GetUserIDsByChatID gets user_id by all users who are in the chat.
+func (m *MessengerService) GetUserIDsByChatID(ctx context.Context, chatID int64) (userIDs []int64, err error) {
+	if chatID < 1 {
+		return nil, errs.NewAppError(
+			errs.CodeValidationError,
+			"validation error: "+errs.ErrInvalidChatID.Error(),
+			fmt.Errorf("validation error: %v", errs.ErrInvalidChatID),
+		)
+	}
+
+	chatIDs, err := m.messengerRepository.GetUserIDsByChatID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	return chatIDs, nil
 }
 
 // UpdateUser updates data about user into messenger database.
