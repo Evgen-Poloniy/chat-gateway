@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	model "github.com/Evgen-Poloniy/chat-gateway/internal/model"
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -84,7 +85,7 @@ func (mr *MockMessengerRepositoryMockRecorder) CreateUser(ctx, user any) *gomock
 }
 
 // GetChatsByUserID mocks base method.
-func (m *MockMessengerRepository) GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]model.Chat, error) {
+func (m *MockMessengerRepository) GetChatsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]model.Chat, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChatsByUserID", ctx, userID, limit, offset)
 	ret0, _ := ret[0].([]model.Chat)
@@ -99,7 +100,7 @@ func (mr *MockMessengerRepositoryMockRecorder) GetChatsByUserID(ctx, userID, lim
 }
 
 // GetUserDataByUserID mocks base method.
-func (m *MockMessengerRepository) GetUserDataByUserID(ctx context.Context, userID int64) (*model.User, error) {
+func (m *MockMessengerRepository) GetUserDataByUserID(ctx context.Context, userID uuid.UUID) (*model.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserDataByUserID", ctx, userID)
 	ret0, _ := ret[0].(*model.User)
@@ -129,10 +130,10 @@ func (mr *MockMessengerRepositoryMockRecorder) GetUserDataByUsername(ctx, userna
 }
 
 // GetUserIDsByChatID mocks base method.
-func (m *MockMessengerRepository) GetUserIDsByChatID(ctx context.Context, chatID int64) ([]int64, error) {
+func (m *MockMessengerRepository) GetUserIDsByChatID(ctx context.Context, chatID uuid.UUID) (uuid.UUIDs, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserIDsByChatID", ctx, chatID)
-	ret0, _ := ret[0].([]int64)
+	ret0, _ := ret[0].(uuid.UUIDs)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -207,4 +208,28 @@ func (m *MockMessageBroker) SendMessage(ctx context.Context, message *model.Send
 func (mr *MockMessageBrokerMockRecorder) SendMessage(ctx, message any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockMessageBroker)(nil).SendMessage), ctx, message)
+}
+
+// MockMessengerCache is a mock of MessengerCache interface.
+type MockMessengerCache struct {
+	ctrl     *gomock.Controller
+	recorder *MockMessengerCacheMockRecorder
+	isgomock struct{}
+}
+
+// MockMessengerCacheMockRecorder is the mock recorder for MockMessengerCache.
+type MockMessengerCacheMockRecorder struct {
+	mock *MockMessengerCache
+}
+
+// NewMockMessengerCache creates a new mock instance.
+func NewMockMessengerCache(ctrl *gomock.Controller) *MockMessengerCache {
+	mock := &MockMessengerCache{ctrl: ctrl}
+	mock.recorder = &MockMessengerCacheMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockMessengerCache) EXPECT() *MockMessengerCacheMockRecorder {
+	return m.recorder
 }

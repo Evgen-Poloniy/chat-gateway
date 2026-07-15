@@ -2,11 +2,13 @@ package entity
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // User represents user data into messenger.
 type User struct {
-	UserID    int64      `validate:"required,gt=0"`
+	UserID    uuid.UUID  `validate:"-"`
 	Username  string     `validate:"required,min=3,max=32,alphanum"`
 	Email     *string    `validate:"omitempty,email,max=64"`
 	FirstName *string    `validate:"omitempty,min=1,max=100"`
@@ -18,7 +20,7 @@ type User struct {
 
 // UpdateUser represents user updating data into messenger.
 type UpdateUser struct {
-	UserID    int64      `validate:"required,gt=0"`
+	UserID    uuid.UUID  `validate:"required"`
 	Username  *string    `validate:"omitempty,min=3,max=32,alphanum"`
 	Email     *string    `validate:"omitempty,email,max=64"`
 	FirstName *string    `validate:"omitempty,min=1,max=100"`

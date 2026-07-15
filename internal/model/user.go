@@ -1,10 +1,14 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // User represents user data into messenger.
 type User struct {
-	UserID    int64      `db:"id"`
+	UserID    uuid.UUID  `db:"id"`
 	Username  string     `db:"username"`
 	Email     *string    `db:"email"`
 	FirstName *string    `db:"first_name"`
@@ -16,7 +20,7 @@ type User struct {
 
 // UpdateUser represents user updating data into messenger.
 type UpdateUser struct {
-	UserID    int64      `db:"id"`
+	UserID    uuid.UUID  `db:"id"`
 	Username  *string    `db:"username"`
 	Email     *string    `db:"email"`
 	FirstName *string    `db:"first_name"`

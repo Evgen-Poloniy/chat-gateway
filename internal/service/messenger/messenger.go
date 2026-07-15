@@ -9,6 +9,7 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 //go:generate mockgen -source=$GOFILE -destination=mocks/messenger_mocks.go -package=mock_repository
@@ -24,10 +25,10 @@ type MessengerRepository interface {
 	GetUserDataByUsername(ctx context.Context, username string) (*model.User, error)
 
 	//GetUserDataByUserID gets all data about user from the messenger database by user_id.
-	GetUserDataByUserID(ctx context.Context, userID int64) (*model.User, error)
+	GetUserDataByUserID(ctx context.Context, userID uuid.UUID) (*model.User, error)
 
 	// GetUserIDsByChatID gets user_id by all users who are in the chat.
-	GetUserIDsByChatID(ctx context.Context, chatID int64) ([]int64, error)
+	GetUserIDsByChatID(ctx context.Context, chatID uuid.UUID) (uuid.UUIDs, error)
 
 	// UpdateUser updates data about user into messenger database.
 	UpdateUser(ctx context.Context, user *model.UpdateUser) error
@@ -41,7 +42,7 @@ type MessengerRepository interface {
 	CreateGroupChat(ctx context.Context, chat *model.GroupChat) error
 
 	// GetChatsByUserID gets chat by user_id with limits and offset.
-	GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]model.Chat, error)
+	GetChatsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]model.Chat, error)
 
 	// UpdateGroupChat updates data about chat like name, title, description, owner.
 	UpdateGroupChat(ctx context.Context, chat *model.UpdateGroupChat) error

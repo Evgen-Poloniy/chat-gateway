@@ -11,6 +11,7 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,6 +20,7 @@ import (
 func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
 	now := time.Now()
 	username := "testuser"
+	userID := uuid.New()
 
 	query := `
         SELECT id, username, email, first_name, last_name, birth_date, created_at, gender
@@ -37,7 +39,7 @@ func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
 			input: username,
 			mock: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"id", "username", "email", "first_name", "last_name", "birth_date", "created_at", "gender"}).
-					AddRow(1, username, "test@test.com", "John", "Doe", now, now, "male")
+					AddRow(userID, username, "test@test.com", "John", "Doe", now, now, "male")
 
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
 					WithArgs(username).
@@ -90,7 +92,7 @@ func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
 				assert.NoError(t, err)
 				require.NotNil(t, user)
 				assert.Equal(t, tt.input, user.Username)
-				assert.Equal(t, int64(1), user.UserID)
+				assert.Equal(t, userID, user.UserID)
 			}
 
 			assert.NoError(t, mock.ExpectationsWereMet())
@@ -100,7 +102,7 @@ func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
 
 func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 	now := time.Now()
-	var userID int64 = 1
+	userID := uuid.New()
 
 	query := `
         SELECT id, username, email, first_name, last_name, birth_date, created_at, gender
@@ -109,7 +111,7 @@ func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		input             int64
+		input             uuid.UUID
 		mock              func(mock sqlmock.Sqlmock)
 		wantErr           bool
 		expectedErrorCode errs.ErrCode
@@ -182,10 +184,11 @@ func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 
 func TestPostgresRepository_CreateUser(t *testing.T) {
 	now := time.Now()
+	userID := uuid.New()
 
 	query := `INSERT INTO users
-		(username, email, first_name, last_name, birth_date, gender)
-		VALUES (?, ?, ?, ?, ?, ?) RETURNING id, created_at`
+		(id, username, email, first_name, last_name, birth_date, gender)
+		VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING created_at`
 
 	tests := []struct {
 		name              string
@@ -197,6 +200,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 		{
 			name: "Success",
 			input: &model.User{
+				UserID:    userID,
 				Username:  "newuser",
 				Email:     ptr("new@test.com"),
 				FirstName: ptr("New"),
@@ -206,14 +210,15 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 			},
 			mock: func(mock sqlmock.Sqlmock, user *model.User) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(1, now))
+					WithArgs(user.UserID, user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
+					WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow(now))
 			},
 			wantErr: false,
 		},
 		{
 			name: "Error - Bind Named Params",
 			input: &model.User{
+				UserID:    userID,
 				Username:  "newuser",
 				Email:     ptr("new@test.com"),
 				FirstName: ptr("New"),
@@ -223,7 +228,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 			},
 			mock: func(mock sqlmock.Sqlmock, user *model.User) {
 				mock.ExpectQuery("INSERT INTO users *").
-					WithArgs(user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
+					WithArgs(user.UserID, user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
 					WillReturnError(errDBBindError)
 			},
 			wantErr:           true,
@@ -232,6 +237,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 		{
 			name: "Error - Unique Violation",
 			input: &model.User{
+				UserID:    userID,
 				Username:  "newuser",
 				Email:     ptr("new@test.com"),
 				FirstName: ptr("New"),
@@ -245,7 +251,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 					Message: "duplicate key value violates unique constraint",
 				}
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
+					WithArgs(user.UserID, user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
 					WillReturnError(pgErr)
 			},
 			wantErr:           true,
@@ -254,6 +260,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 		{
 			name: "Error - Query Failed",
 			input: &model.User{
+				UserID:    userID,
 				Username:  "newuser",
 				Email:     ptr("new@test.com"),
 				FirstName: ptr("New"),
@@ -263,7 +270,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 			},
 			mock: func(mock sqlmock.Sqlmock, user *model.User) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
+					WithArgs(user.UserID, user.Username, user.Email, user.FirstName, user.LastName, user.BirthDate, user.Gender).
 					WillReturnError(errDBQueryFailed)
 			},
 			wantErr:           true,
@@ -289,7 +296,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 				}
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, int64(1), tt.input.UserID)
+				assert.Equal(t, userID, tt.input.UserID)
 				assert.NotNil(t, tt.input.CreatedAt)
 			}
 
@@ -305,34 +312,37 @@ func TestPostgresRepository_GetUserIDsByChatID(t *testing.T) {
 		WHERE chat_id = $1
 	`
 
+	chatID := uuid.New()
+	userID1 := uuid.New()
+
 	tests := []struct {
 		name              string
-		chatID            int64
+		chatID            uuid.UUID
 		mock              func(mock sqlmock.Sqlmock)
 		wantErr           bool
 		expectedErrorCode errs.ErrCode
 	}{
 		{
 			name:   "Success",
-			chatID: 1,
+			chatID: chatID,
 			mock: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"user_id"}).
-					AddRow(int64(10))
+					AddRow(userID1)
 
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(int64(1)).
+					WithArgs(chatID).
 					WillReturnRows(rows)
 			},
 			wantErr: false,
 		},
 		{
 			name:   "Error - Chats Not Found",
-			chatID: 1,
+			chatID: chatID,
 			mock: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"user_id"})
 
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(int64(1)).
+					WithArgs(chatID).
 					WillReturnRows(rows)
 			},
 			wantErr:           true,
@@ -340,10 +350,10 @@ func TestPostgresRepository_GetUserIDsByChatID(t *testing.T) {
 		},
 		{
 			name:   "Error - Query Failed",
-			chatID: 1,
+			chatID: chatID,
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(1).
+					WithArgs(chatID).
 					WillReturnError(errDBQueryFailed)
 			},
 			wantErr:           true,
@@ -372,7 +382,7 @@ func TestPostgresRepository_GetUserIDsByChatID(t *testing.T) {
 				assert.NoError(t, err)
 				require.NotNil(t, userIDs)
 				require.Len(t, userIDs, 1)
-				assert.Equal(t, int64(10), userIDs[0])
+				assert.Equal(t, userID1, userIDs[0])
 			}
 
 			assert.NoError(t, mock.ExpectationsWereMet())
@@ -382,6 +392,7 @@ func TestPostgresRepository_GetUserIDsByChatID(t *testing.T) {
 
 func TestPostgresRepository_UpdateUser(t *testing.T) {
 	now := time.Now()
+	userID := uuid.New()
 
 	expectedQuery := `UPDATE users SET
 		username = COALESCE(?, username),
@@ -402,7 +413,7 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 		{
 			name: "Success",
 			input: &model.UpdateUser{
-				UserID:    1,
+				UserID:    userID,
 				Username:  ptr("updateduser"),
 				Email:     ptr("updated@test.com"),
 				FirstName: ptr("Update"),
@@ -426,7 +437,7 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 		{
 			name: "Error - Unique Violation",
 			input: &model.UpdateUser{
-				UserID:    1,
+				UserID:    userID,
 				Username:  ptr("updateduser"),
 				Email:     ptr("updated@test.com"),
 				FirstName: ptr("Update"),
@@ -452,7 +463,7 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 		{
 			name: "Error - Query Failed",
 			input: &model.UpdateUser{
-				UserID:    1,
+				UserID:    userID,
 				Username:  ptr("updateduser"),
 				Email:     ptr("updated@test.com"),
 				FirstName: ptr("Update"),
@@ -474,7 +485,7 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 		{
 			name: "Error - Bind Named Params",
 			input: &model.UpdateUser{
-				UserID:    1,
+				UserID:    userID,
 				Username:  ptr("updateduser"),
 				Email:     ptr("updated@test.com"),
 				FirstName: ptr("Update"),
@@ -496,7 +507,7 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 		{
 			name: "Error - Not Found",
 			input: &model.UpdateUser{
-				UserID:    1,
+				UserID:    userID,
 				Username:  ptr("updateduser"),
 				Email:     ptr("updated@test.com"),
 				FirstName: ptr("Update"),

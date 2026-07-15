@@ -2,6 +2,8 @@ package dto
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // RegisterUser represents DTO for register new user data into the messenger database.
@@ -26,7 +28,7 @@ type UpdateUserReq struct {
 
 // UserInfo represents DTO response with data about user the messenger database.
 type UserDataResp struct {
-	UserID    int64      `json:"user_id"`
+	UserID    uuid.UUID  `json:"user_id"`
 	Username  string     `json:"username"`
 	Email     *string    `json:"email,omitempty"`
 	FirstName *string    `json:"first_name,omitempty"`

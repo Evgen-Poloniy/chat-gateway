@@ -3,11 +3,11 @@ package v1
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,13 +65,13 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	userID, err := strconv.ParseInt(userIdParam, 10, 64)
+	userID, err := uuid.Parse(userIdParam)
 	if err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "bad_request",
-			Message:    "failed to convert parameter 'user_id' to int64",
-			Err:        fmt.Errorf("failed to convert parameter 'user_id' to int64: %v", err),
+			Message:    "failed to parse parameter 'user_id' as uuid",
+			Err:        fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
 		})
 		return
 	}
@@ -161,13 +161,13 @@ func (h *Handler) GetUserDataByUserID(c *gin.Context) {
 		return
 	}
 
-	userID, err := strconv.ParseInt(userIdParam, 10, 64)
+	userID, err := uuid.Parse(userIdParam)
 	if err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "bad_request",
-			Message:    "failed to convert parameter 'user_id' to int64",
-			Err:        fmt.Errorf("failed to convert parameter 'user_id' to int64: %v", err),
+			Message:    "failed to parse parameter 'user_id' as uuid",
+			Err:        fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
 		})
 		return
 	}
@@ -175,6 +175,7 @@ func (h *Handler) GetUserDataByUserID(c *gin.Context) {
 	user, err := h.messenger.GetUserDataByUserID(c.Request.Context(), userID)
 	if err != nil {
 		c.Error(err)
+		return
 	}
 
 	resp := dto.UserDataResp{

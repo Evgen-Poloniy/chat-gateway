@@ -11,7 +11,9 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	mock_repository "github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger/mocks"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -31,21 +33,23 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 		{
 			name: "Success",
 			input: &entity.DirectChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 			},
 			mock: func(mock *mock_repository.MockMessengerRepository) {
 				mock.EXPECT().
 					CreateDirectChat(gomock.Any(), gomock.Any()).
-					Return(nil)
+					DoAndReturn(func(ctx context.Context, m *model.DirectChat) error {
+						m.ChatID = uuid.New()
+						m.CreatedAt = time.Now()
+						return nil
+					})
 			},
 			wantErr: false,
 		},
 		{
 			name: "Error - Repository Failed",
 			input: &entity.DirectChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 			},
 			mock: func(mock *mock_repository.MockMessengerRepository) {
 				mock.EXPECT().
@@ -58,7 +62,6 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 		{
 			name: "Error - Validation (Missing ParticipantIDs)",
 			input: &entity.DirectChat{
-				ChatID:         1,
 				ParticipantIDs: nil,
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
@@ -68,8 +71,7 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 		{
 			name: "Error - Validation (Invalid ParticipantIDs count - 1)",
 			input: &entity.DirectChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1},
+				ParticipantIDs: []uuid.UUID{uuid.New()},
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
@@ -78,38 +80,7 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 		{
 			name: "Error - Validation (Invalid ParticipantIDs count - 3)",
 			input: &entity.DirectChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2, 3},
-			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Invalid Participant ID - 0)",
-			input: &entity.DirectChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 0},
-			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Invalid Participant ID - negative)",
-			input: &entity.DirectChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, -5},
-			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Invalid ChatID - negative)",
-			input: &entity.DirectChat{
-				ChatID:         -1,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New(), uuid.New()},
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
@@ -136,6 +107,8 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 				}
 			} else {
 				assert.NoError(t, err)
+				assert.NotEqual(t, uuid.Nil, tt.input.ChatID)
+				assert.False(t, tt.input.CreatedAt.IsZero())
 			}
 		})
 	}
@@ -143,6 +116,7 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 
 func TestMessengerService_CreateGroupChat(t *testing.T) {
 	now := time.Now()
+	generatedChatID := uuid.New()
 
 	tests := []struct {
 		name              string
@@ -154,16 +128,15 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 		{
 			name: "Success",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2, 3},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New(), uuid.New()},
 				Name:           "Dev Team",
-				OwnerID:        1,
+				OwnerID:        uuid.New(),
 			},
 			mock: func(mock *mock_repository.MockMessengerRepository) {
 				mock.EXPECT().
 					CreateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.GroupChat) error {
-						m.ChatID = 100
+						m.ChatID = generatedChatID
 						m.CreatedAt = now
 						return nil
 					})
@@ -173,18 +146,17 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 		{
 			name: "Success - Boundary Values",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 				Name:           strings.Repeat("A", 64),
 				Title:          ptr(strings.Repeat("B", 64)),
 				Description:    ptr(strings.Repeat("C", 255)),
-				OwnerID:        1,
+				OwnerID:        uuid.New(),
 			},
 			mock: func(mock *mock_repository.MockMessengerRepository) {
 				mock.EXPECT().
 					CreateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.GroupChat) error {
-						m.ChatID = 100
+						m.ChatID = generatedChatID
 						m.CreatedAt = now
 						return nil
 					})
@@ -194,10 +166,9 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Repository Failed",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2, 3},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New(), uuid.New()},
 				Name:           "Dev Team",
-				OwnerID:        1,
+				OwnerID:        uuid.New(),
 			},
 			mock: func(mock *mock_repository.MockMessengerRepository) {
 				mock.EXPECT().
@@ -210,10 +181,9 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Missing Name - empty)",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 				Name:           "",
-				OwnerID:        1,
+				OwnerID:        uuid.New(),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
@@ -222,10 +192,9 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Name too long - 65)",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 				Name:           strings.Repeat("A", 65),
-				OwnerID:        1,
+				OwnerID:        uuid.New(),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
@@ -234,11 +203,10 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Title too long - 65)",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 				Name:           "Dev Team",
 				Title:          ptr(strings.Repeat("A", 65)),
-				OwnerID:        1,
+				OwnerID:        uuid.New(),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
@@ -247,35 +215,21 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Description too long - 256)",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 				Name:           "Dev Team",
 				Description:    ptr(strings.Repeat("A", 256)),
-				OwnerID:        1,
+				OwnerID:        uuid.New(),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Error - Validation (Missing OwnerID - 0)",
+			name: "Error - Validation (Missing OwnerID - Nil UUID)",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 				Name:           "Dev Team",
-				OwnerID:        0,
-			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Invalid OwnerID - negative)",
-			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, 2},
-				Name:           "Dev Team",
-				OwnerID:        -1,
+				OwnerID:        uuid.Nil,
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
@@ -284,10 +238,9 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Less than 2 participants - 1)",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1},
+				ParticipantIDs: []uuid.UUID{uuid.New()},
 				Name:           "Dev Team",
-				OwnerID:        1,
+				OwnerID:        uuid.New(),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
@@ -296,22 +249,9 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Empty participants - 0)",
 			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{},
+				ParticipantIDs: []uuid.UUID{},
 				Name:           "Dev Team",
-				OwnerID:        1,
-			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Invalid participant ID - negative)",
-			input: &entity.GroupChat{
-				ChatID:         1,
-				ParticipantIDs: []int64{1, -5},
-				Name:           "Dev Team",
-				OwnerID:        1,
+				OwnerID:        uuid.New(),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
@@ -338,7 +278,7 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				}
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, int64(100), tt.input.ChatID)
+				assert.Equal(t, generatedChatID, tt.input.ChatID)
 				assert.Equal(t, now, tt.input.CreatedAt)
 			}
 		})
@@ -346,9 +286,13 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 }
 
 func TestMessengerService_GetChatsByUserID(t *testing.T) {
+	userID := uuid.New()
+	chatID := uuid.New()
+	ownerID := uuid.New()
+
 	tests := []struct {
 		name              string
-		userID            int64
+		userID            uuid.UUID
 		limit             int
 		offset            int
 		mock              func(mock *mock_repository.MockMessengerRepository)
@@ -357,64 +301,38 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 	}{
 		{
 			name:   "Success",
-			userID: 1,
+			userID: userID,
 			limit:  10,
 			offset: 0,
 			mock: func(mock *mock_repository.MockMessengerRepository) {
 				mock.EXPECT().
-					GetChatsByUserID(gomock.Any(), int64(1), 10, 0).
+					GetChatsByUserID(gomock.Any(), userID, 10, 0).
 					Return([]model.Chat{
-						{ChatID: 1, ChatType: "direct", Name: ptr("Chat 1"), OwnerID: ptr(int64(1))},
+						{ChatID: chatID, ChatType: "direct", Name: ptr("Chat 1"), OwnerID: ptr(ownerID)},
 					}, nil)
 			},
 			wantErr: false,
 		},
 		{
 			name:   "Success - Empty Result",
-			userID: 2,
+			userID: uuid.New(),
 			limit:  10,
 			offset: 0,
 			mock: func(mock *mock_repository.MockMessengerRepository) {
 				mock.EXPECT().
-					GetChatsByUserID(gomock.Any(), int64(2), 10, 0).
+					GetChatsByUserID(gomock.Any(), gomock.Any(), 10, 0).
 					Return([]model.Chat{}, nil)
 			},
 			wantErr: false,
 		},
 		{
 			name:   "Error - Repository Failed",
-			userID: 1,
+			userID: userID,
 			limit:  10,
 			offset: 0,
 			mock: func(mock *mock_repository.MockMessengerRepository) {
 				mock.EXPECT().
-					GetChatsByUserID(gomock.Any(), int64(1), 10, 0).
-					Return(nil, errRepoQueryError)
-			},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeQueryError,
-		},
-		{
-			name:   "Error - Repository Failed (Invalid UserID - negative)",
-			userID: -1,
-			limit:  10,
-			offset: 0,
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
-					GetChatsByUserID(gomock.Any(), int64(-1), 10, 0).
-					Return(nil, errRepoQueryError)
-			},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeQueryError,
-		},
-		{
-			name:   "Error - Repository Failed (Invalid limit - negative)",
-			userID: 1,
-			limit:  -10,
-			offset: 0,
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
-					GetChatsByUserID(gomock.Any(), int64(1), -10, 0).
+					GetChatsByUserID(gomock.Any(), userID, 10, 0).
 					Return(nil, errRepoQueryError)
 			},
 			wantErr:           true,
@@ -442,6 +360,10 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 				assert.Nil(t, chats)
 			} else {
 				assert.NoError(t, err)
+				if tt.name == "Success" {
+					require.Len(t, chats, 1)
+					assert.Equal(t, chatID, chats[0].ChatID)
+				}
 			}
 		})
 	}
@@ -449,6 +371,9 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 
 func TestMessengerService_UpdateGroupChat(t *testing.T) {
 	now := time.Now()
+	chatID := uuid.New()
+	updaterID := uuid.New()
+	newOwnerID := uuid.New()
 
 	tests := []struct {
 		name              string
@@ -460,8 +385,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Success",
 			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        1,
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
 				Name:          ptr("New Name"),
 			},
 			mock: func(mock *mock_repository.MockMessengerRepository) {
@@ -477,12 +402,12 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Success - Boundary Values",
 			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        1,
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
 				Name:          ptr(strings.Repeat("A", 64)),
 				Title:         ptr(strings.Repeat("B", 64)),
 				Description:   ptr(strings.Repeat("C", 255)),
-				OwnerID:       ptr(int64(1)),
+				OwnerID:       ptr(newOwnerID),
 			},
 			mock: func(mock *mock_repository.MockMessengerRepository) {
 				mock.EXPECT().
@@ -497,8 +422,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Error - Repository Failed",
 			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        1,
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
 				Name:          ptr("New Name"),
 			},
 			mock: func(mock *mock_repository.MockMessengerRepository) {
@@ -510,62 +435,20 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 			expectedErrorCode: errs.CodeQueryError,
 		},
 		{
-			name: "Error - Validation (Missing UserIDUpdater - 0)",
+			name: "Error - Validation (Missing UserIDUpdater - Nil UUID)",
 			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 0,
-				ChatID:        1,
+				UserIDUpdater: uuid.Nil,
+				ChatID:        chatID,
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Error - Validation (Invalid UserIDUpdater - negative)",
+			name: "Error - Validation (Missing ChatID - Nil UUID)",
 			input: &entity.UpdateGroupChat{
-				UserIDUpdater: -1,
-				ChatID:        1,
-			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Missing ChatID - 0)",
-			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        0,
-			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Invalid ChatID - negative)",
-			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        -1,
-			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Invalid OwnerID - 0)",
-			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        1,
-				OwnerID:       ptr(int64(0)),
-			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Invalid OwnerID - negative)",
-			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        1,
-				OwnerID:       ptr(int64(-5)),
+				UserIDUpdater: updaterID,
+				ChatID:        uuid.Nil,
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
 			wantErr:           true,
@@ -574,8 +457,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Name too long - 65)",
 			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        1,
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
 				Name:          ptr(strings.Repeat("A", 65)),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
@@ -585,8 +468,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Name empty string)",
 			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        1,
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
 				Name:          ptr(""),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
@@ -596,8 +479,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Title too long - 65)",
 			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        1,
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
 				Title:         ptr(strings.Repeat("A", 65)),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
@@ -607,8 +490,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Error - Validation (Description too long - 256)",
 			input: &entity.UpdateGroupChat{
-				UserIDUpdater: 1,
-				ChatID:        1,
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
 				Description:   ptr(strings.Repeat("A", 256)),
 			},
 			mock:              func(mock *mock_repository.MockMessengerRepository) {},
@@ -653,8 +536,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 		{
 			name: "Success",
 			input: &entity.SendMessage{
-				ChatID:   1,
-				SenderID: 2,
+				ChatID:   uuid.New(),
+				SenderID: uuid.New(),
 				Message:  "Hello World",
 			},
 			mock: func(mock *mock_repository.MockMessageBroker) {
@@ -667,8 +550,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 		{
 			name: "Success - Boundary Values",
 			input: &entity.SendMessage{
-				ChatID:   1,
-				SenderID: 2,
+				ChatID:   uuid.New(),
+				SenderID: uuid.New(),
 				Message:  strings.Repeat("A", 4096),
 			},
 			mock: func(mock *mock_repository.MockMessageBroker) {
@@ -681,8 +564,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 		{
 			name: "Error - Broker Failed",
 			input: &entity.SendMessage{
-				ChatID:   1,
-				SenderID: 2,
+				ChatID:   uuid.New(),
+				SenderID: uuid.New(),
 				Message:  "Hello World",
 			},
 			mock: func(mock *mock_repository.MockMessageBroker) {
@@ -694,10 +577,10 @@ func TestMessengerService_SendMessage(t *testing.T) {
 			expectedErrorCode: errs.CodeQueryError,
 		},
 		{
-			name: "Error - Validation (Missing ChatID - 0)",
+			name: "Error - Validation (Missing ChatID - Nil UUID)",
 			input: &entity.SendMessage{
-				ChatID:   0,
-				SenderID: 2,
+				ChatID:   uuid.Nil,
+				SenderID: uuid.New(),
 				Message:  "Hello World",
 			},
 			mock:              func(mock *mock_repository.MockMessageBroker) {},
@@ -705,32 +588,10 @@ func TestMessengerService_SendMessage(t *testing.T) {
 			expectedErrorCode: errs.CodeValidationError,
 		},
 		{
-			name: "Error - Validation (Invalid ChatID - negative)",
+			name: "Error - Validation (Missing SenderID - Nil UUID)",
 			input: &entity.SendMessage{
-				ChatID:   -1,
-				SenderID: 2,
-				Message:  "Hello World",
-			},
-			mock:              func(mock *mock_repository.MockMessageBroker) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Missing SenderID - 0)",
-			input: &entity.SendMessage{
-				ChatID:   1,
-				SenderID: 0,
-				Message:  "Hello World",
-			},
-			mock:              func(mock *mock_repository.MockMessageBroker) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-		{
-			name: "Error - Validation (Invalid SenderID - negative)",
-			input: &entity.SendMessage{
-				ChatID:   1,
-				SenderID: -5,
+				ChatID:   uuid.New(),
+				SenderID: uuid.Nil,
 				Message:  "Hello World",
 			},
 			mock:              func(mock *mock_repository.MockMessageBroker) {},
@@ -740,8 +601,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 		{
 			name: "Error - Validation (Empty Message)",
 			input: &entity.SendMessage{
-				ChatID:   1,
-				SenderID: 2,
+				ChatID:   uuid.New(),
+				SenderID: uuid.New(),
 				Message:  "",
 			},
 			mock:              func(mock *mock_repository.MockMessageBroker) {},
@@ -751,8 +612,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 		{
 			name: "Error - Validation (Message too long - 4097)",
 			input: &entity.SendMessage{
-				ChatID:   1,
-				SenderID: 2,
+				ChatID:   uuid.New(),
+				SenderID: uuid.New(),
 				Message:  strings.Repeat("A", 4097),
 			},
 			mock:              func(mock *mock_repository.MockMessageBroker) {},

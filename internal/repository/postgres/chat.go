@@ -9,6 +9,7 @@ import (
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -25,11 +26,11 @@ func (p *PostgresRepository) CreateDirectChat(ctx context.Context, chat *model.D
 	defer tx.Rollback()
 
 	chatQuery := `
-		INSERT INTO chats (type)
-		VALUES ('direct')
-		RETURNING id, created_at`
+		INSERT INTO chats (id, type)
+		VALUES ($1, 'direct')
+		RETURNING created_at`
 
-	if err = tx.QueryRowxContext(ctx, chatQuery).Scan(&chat.ChatID, &chat.CreatedAt); err != nil {
+	if err = tx.QueryRowxContext(ctx, chatQuery, chat.ChatID).Scan(&chat.CreatedAt); err != nil {
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 			if pgErr.Code == "23505" {
 				return errs.NewAppError(
@@ -84,13 +85,13 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *model.Gr
 	defer tx.Rollback()
 
 	chatQuery := `
-		INSERT INTO chats (type, name, title, description, owner_id)
-		VALUES ('group', $1, $2, $3, $4)
-		RETURNING id, created_at`
+		INSERT INTO chats (id, type, name, title, description, owner_id)
+		VALUES ($1, 'group', $2, $3, $4, $5)
+		RETURNING created_at`
 
 	err = tx.QueryRowxContext(
-		ctx, chatQuery, chat.Name, chat.Title, chat.Description, chat.OwnerID,
-	).Scan(&chat.ChatID, &chat.CreatedAt)
+		ctx, chatQuery, chat.ChatID, chat.Name, chat.Title, chat.Description, chat.OwnerID,
+	).Scan(&chat.CreatedAt)
 	if err != nil {
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 			switch pgErr.Code {
@@ -150,7 +151,7 @@ func (p *PostgresRepository) CreateGroupChat(ctx context.Context, chat *model.Gr
 }
 
 // GetChatsByUserID gets chat by user_id with limits and offset
-func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]model.Chat, error) {
+func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]model.Chat, error) {
 	query := `
 		SELECT
 			c.id,
@@ -172,7 +173,7 @@ func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64,
 	if err != nil {
 		return nil, errs.NewAppError(
 			errs.CodeQueryError,
-			fmt.Sprintf("database error: failed to get chats by user id: %d", userID),
+			fmt.Sprintf("database error: failed to get chats by user id: %s", userID),
 			fmt.Errorf("database error: %v", err),
 		)
 	}
@@ -180,8 +181,8 @@ func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID int64,
 	if len(chats) == 0 {
 		return nil, errs.NewAppError(
 			errs.CodeChatNotFound,
-			fmt.Sprintf("database error: records about user chats with user_id '%d' not found", userID),
-			fmt.Errorf("database error: records about user chats with user_id '%d' not found", userID),
+			fmt.Sprintf("database error: records about user chats with user_id '%s' not found", userID),
+			fmt.Errorf("database error: records about user chats with user_id '%s' not found", userID),
 		)
 	}
 
@@ -218,8 +219,8 @@ func (p *PostgresRepository) UpdateGroupChat(ctx context.Context, chat *model.Up
 		if errors.Is(err, sql.ErrNoRows) {
 			return errs.NewAppError(
 				errs.CodeChatNotFound,
-				fmt.Sprintf("database error: record about chat with chat_id '%d' not found", chat.ChatID),
-				fmt.Errorf("database error: record about chat with chat_id '%d' not found", chat.ChatID),
+				fmt.Sprintf("database error: record about chat with chat_id '%s' not found", chat.ChatID),
+				fmt.Errorf("database error: record about chat with chat_id '%s' not found", chat.ChatID),
 			)
 		}
 

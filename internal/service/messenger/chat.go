@@ -5,6 +5,7 @@ import (
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
+	"github.com/google/uuid"
 )
 
 // CreateDirectChat accept user IDs and create direct chat.
@@ -14,12 +15,16 @@ func (m *MessengerService) CreateDirectChat(ctx context.Context, chat *entity.Di
 	}
 
 	chatModel := model.DirectChat{
+		ChatID: uuid.New(),
 		ParticipantIDs: chat.ParticipantIDs,
 	}
 
 	if err := m.messengerRepository.CreateDirectChat(ctx, &chatModel); err != nil {
 		return err
 	}
+
+	chat.ChatID = chatModel.ChatID
+	chat.CreatedAt = chatModel.CreatedAt
 
 	return nil
 }
@@ -31,11 +36,10 @@ func (m *MessengerService) CreateGroupChat(ctx context.Context, chat *entity.Gro
 	}
 
 	chatModel := model.GroupChat{
-		ChatID:      chat.ChatID,
+		ChatID:      uuid.New(),
 		Name:        chat.Name,
 		Title:       chat.Title,
 		Description: chat.Description,
-		CreatedAt:   chat.CreatedAt,
 		OwnerID:     chat.OwnerID,
 	}
 
@@ -50,7 +54,7 @@ func (m *MessengerService) CreateGroupChat(ctx context.Context, chat *entity.Gro
 }
 
 // GetChatsByUserID gets chat by user_id with limits and offset
-func (m *MessengerService) GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]entity.Chat, error) {
+func (m *MessengerService) GetChatsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]entity.Chat, error) {
 	chatModels, err := m.messengerRepository.GetChatsByUserID(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, err

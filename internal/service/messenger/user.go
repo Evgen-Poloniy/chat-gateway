@@ -2,11 +2,10 @@ package messenger
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/google/uuid"
 )
 
 // GetUserDataByUsername represents searching all data about user from the messenger database.
@@ -31,7 +30,7 @@ func (m *MessengerService) GetUserDataByUsername(ctx context.Context, username s
 }
 
 // GetUserDataByUserID gets all data about user from the messenger database by user_id.
-func (m *MessengerService) GetUserDataByUserID(ctx context.Context, userID int64) (*entity.User, error) {
+func (m *MessengerService) GetUserDataByUserID(ctx context.Context, userID uuid.UUID) (*entity.User, error) {
 	modelUser, err := m.messengerRepository.GetUserDataByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -58,13 +57,12 @@ func (m *MessengerService) CreateUser(ctx context.Context, user *entity.User) er
 	}
 
 	userModel := model.User{
-		UserID:    user.UserID,
+		UserID:    uuid.New(),
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		BirthDate: user.BirthDate,
-		CreatedAt: user.CreatedAt,
 		Gender:    user.Gender,
 	}
 
@@ -79,15 +77,7 @@ func (m *MessengerService) CreateUser(ctx context.Context, user *entity.User) er
 }
 
 // GetUserIDsByChatID gets user_id by all users who are in the chat.
-func (m *MessengerService) GetUserIDsByChatID(ctx context.Context, chatID int64) (userIDs []int64, err error) {
-	if chatID < 1 {
-		return nil, errs.NewAppError(
-			errs.CodeValidationError,
-			"validation error: "+errs.ErrInvalidChatID.Error(),
-			fmt.Errorf("validation error: %v", errs.ErrInvalidChatID),
-		)
-	}
-
+func (m *MessengerService) GetUserIDsByChatID(ctx context.Context, chatID uuid.UUID) (userIDs uuid.UUIDs, err error) {
 	chatIDs, err := m.messengerRepository.GetUserIDsByChatID(ctx, chatID)
 	if err != nil {
 		return nil, err
@@ -110,7 +100,6 @@ func (m *MessengerService) UpdateUser(ctx context.Context, user *entity.UpdateUs
 		LastName:  user.LastName,
 		BirthDate: user.BirthDate,
 		Gender:    user.Gender,
-		CreatedAt: user.CreatedAt,
 	}
 
 	if err := m.messengerRepository.UpdateUser(ctx, &userModel); err != nil {

@@ -12,6 +12,7 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,6 +28,9 @@ var (
 
 func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 	now := time.Now()
+	chatID := uuid.New()
+	userID1 := uuid.New()
+	userID2 := uuid.New()
 
 	tests := []struct {
 		name              string
@@ -38,16 +42,18 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 		{
 			name: "Success",
 			input: &model.DirectChat{
-				ParticipantIDs: []int64{1, 2},
+				ChatID:         chatID,
+				ParticipantIDs: []uuid.UUID{userID1, userID2},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type) VALUES ('direct') RETURNING id, created_at`)).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(1, now))
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type) VALUES ($1, 'direct') RETURNING created_at`)).
+					WithArgs(chatID).
+					WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow(now))
 
 				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2), ($1, $3)`)).
-					WithArgs(1, 1, 2).
+					WithArgs(chatID, userID1, userID2).
 					WillReturnResult(sqlmock.NewResult(1, 2))
 
 				mock.ExpectCommit()
@@ -57,7 +63,8 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 		{
 			name: "Error - Transaction Begin Failed",
 			input: &model.DirectChat{
-				ParticipantIDs: []int64{1, 2},
+				ChatID:         chatID,
+				ParticipantIDs: []uuid.UUID{userID1, userID2},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin().WillReturnError(errConnectionLost)
@@ -68,7 +75,8 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 		{
 			name: "Error - Unique Violation",
 			input: &model.DirectChat{
-				ParticipantIDs: []int64{1, 2},
+				ChatID:         chatID,
+				ParticipantIDs: []uuid.UUID{userID1, userID2},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
@@ -79,7 +87,8 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 					Detail:  "Key already exists.",
 				}
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type) VALUES ('direct') RETURNING id, created_at`)).
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type) VALUES ($1, 'direct') RETURNING created_at`)).
+					WithArgs(chatID).
 					WillReturnError(pgErr)
 
 				mock.ExpectRollback()
@@ -90,12 +99,14 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 		{
 			name: "Error - Query Failed",
 			input: &model.DirectChat{
-				ParticipantIDs: []int64{1, 2},
+				ChatID:         chatID,
+				ParticipantIDs: []uuid.UUID{userID1, userID2},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type) VALUES ('direct') RETURNING id, created_at`)).
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type) VALUES ($1, 'direct') RETURNING created_at`)).
+					WithArgs(chatID).
 					WillReturnError(errSyntaxError)
 
 				mock.ExpectRollback()
@@ -106,16 +117,18 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 		{
 			name: "Error - Insert Members Failed",
 			input: &model.DirectChat{
-				ParticipantIDs: []int64{1, 2},
+				ChatID:         chatID,
+				ParticipantIDs: []uuid.UUID{userID1, userID2},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type) VALUES ('direct') RETURNING id, created_at`)).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(1, now))
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type) VALUES ($1, 'direct') RETURNING created_at`)).
+					WithArgs(chatID).
+					WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow(now))
 
 				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2), ($1, $3)`)).
-					WithArgs(1, 1, 2).
+					WithArgs(chatID, userID1, userID2).
 					WillReturnError(errFKViolation)
 
 				mock.ExpectRollback()
@@ -126,16 +139,18 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 		{
 			name: "Error - Commit Failed",
 			input: &model.DirectChat{
-				ParticipantIDs: []int64{1, 2},
+				ChatID:         chatID,
+				ParticipantIDs: []uuid.UUID{userID1, userID2},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type) VALUES ('direct') RETURNING id, created_at`)).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(1, now))
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type) VALUES ($1, 'direct') RETURNING created_at`)).
+					WithArgs(chatID).
+					WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow(now))
 
 				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2), ($1, $3)`)).
-					WithArgs(1, 1, 2).
+					WithArgs(chatID, userID1, userID2).
 					WillReturnResult(sqlmock.NewResult(1, 2))
 
 				mock.ExpectCommit().WillReturnError(errCommitFailed)
@@ -164,7 +179,7 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 				}
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, int64(1), tt.input.ChatID)
+				assert.Equal(t, chatID, tt.input.ChatID)
 				assert.Equal(t, now, tt.input.CreatedAt)
 			}
 
@@ -175,6 +190,10 @@ func TestPostgresRepository_CreateDirectChat(t *testing.T) {
 
 func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 	now := time.Now()
+	chatID := uuid.New()
+	ownerID := uuid.New()
+	userID2 := uuid.New()
+	userID3 := uuid.New()
 
 	tests := []struct {
 		name              string
@@ -186,22 +205,23 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 		{
 			name: "Success",
 			input: &model.GroupChat{
+				ChatID:         chatID,
 				Name:           "Group 1",
 				Title:          ptr("Group chat"),
 				Description:    ptr("Group chat"),
-				OwnerID:        1,
-				ParticipantIDs: []int64{1, 2, 3},
+				OwnerID:        ownerID,
+				ParticipantIDs: []uuid.UUID{ownerID, userID2, userID3},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type, name, title, description, owner_id) VALUES ('group', $1, $2, $3, $4) RETURNING id, created_at`)).
-					WithArgs("Group 1", "Group chat", "Group chat", 1).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(2, now))
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type, name, title, description, owner_id) VALUES ($1, 'group', $2, $3, $4, $5) RETURNING created_at`)).
+					WithArgs(chatID, "Group 1", "Group chat", "Group chat", ownerID).
+					WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow(now))
 
 				expectedQuery := regexp.QuoteMeta(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2), ($1, $3), ($1, $4)`)
 				mock.ExpectExec(expectedQuery).
-					WithArgs(2, 1, 2, 3).
+					WithArgs(chatID, ownerID, userID2, userID3).
 					WillReturnResult(sqlmock.NewResult(1, 3))
 
 				mock.ExpectCommit()
@@ -211,7 +231,8 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Transaction Begin Failed",
 			input: &model.GroupChat{
-				Name: "Group 2",
+				ChatID: chatID,
+				Name:   "Group 2",
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin().WillReturnError(context.DeadlineExceeded)
@@ -222,11 +243,12 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Unique Violation",
 			input: &model.GroupChat{
+				ChatID:         chatID,
 				Name:           "Duplicate",
 				Title:          nil,
 				Description:    nil,
-				OwnerID:        1,
-				ParticipantIDs: []int64{1},
+				OwnerID:        ownerID,
+				ParticipantIDs: []uuid.UUID{ownerID},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
@@ -237,8 +259,8 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 					Detail:  "detail",
 				}
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type, name, title, description, owner_id) VALUES ('group', $1, $2, $3, $4) RETURNING id, created_at`)).
-					WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type, name, title, description, owner_id) VALUES ($1, 'group', $2, $3, $4, $5) RETURNING created_at`)).
+					WithArgs(chatID, "Duplicate", nil, nil, ownerID).
 					WillReturnError(pgErr)
 
 				mock.ExpectRollback()
@@ -249,18 +271,19 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Foreign Key Violation",
 			input: &model.GroupChat{
+				ChatID:         chatID,
 				Name:           "New Group",
-				OwnerID:        999,
+				OwnerID:        ownerID,
 				Title:          nil,
 				Description:    nil,
-				ParticipantIDs: []int64{999},
+				ParticipantIDs: []uuid.UUID{ownerID},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
 				pgErr := &pgconn.PgError{Code: "23503", Message: "fk violation", Detail: "owner_id does not exist"}
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type, name, title, description, owner_id) VALUES ('group', $1, $2, $3, $4) RETURNING id, created_at`)).
-					WithArgs("New Group", nil, nil, int64(999)).
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type, name, title, description, owner_id) VALUES ($1, 'group', $2, $3, $4, $5) RETURNING created_at`)).
+					WithArgs(chatID, "New Group", nil, nil, ownerID).
 					WillReturnError(pgErr)
 
 				mock.ExpectRollback()
@@ -271,21 +294,22 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Insert Members Failed",
 			input: &model.GroupChat{
+				ChatID:         chatID,
 				Name:           "Group",
-				OwnerID:        1,
+				OwnerID:        ownerID,
 				Title:          nil,
 				Description:    nil,
-				ParticipantIDs: []int64{1, 2},
+				ParticipantIDs: []uuid.UUID{ownerID, userID2},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type, name, title, description, owner_id) VALUES ('group', $1, $2, $3, $4) RETURNING id, created_at`)).
-					WithArgs("Group", nil, nil, int64(1)).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(10, now))
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type, name, title, description, owner_id) VALUES ($1, 'group', $2, $3, $4, $5) RETURNING created_at`)).
+					WithArgs(chatID, "Group", nil, nil, ownerID).
+					WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow(now))
 
 				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2), ($1, $3)`)).
-					WithArgs(int64(10), int64(1), int64(2)).
+					WithArgs(chatID, ownerID, userID2).
 					WillReturnError(errMemberInsertError)
 
 				mock.ExpectRollback()
@@ -296,17 +320,18 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Query Failed",
 			input: &model.GroupChat{
+				ChatID:         chatID,
 				Name:           "New Group",
-				OwnerID:        999,
+				OwnerID:        ownerID,
 				Title:          nil,
 				Description:    nil,
-				ParticipantIDs: []int64{999},
+				ParticipantIDs: []uuid.UUID{ownerID},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type, name, title, description, owner_id) VALUES ('group', $1, $2, $3, $4) RETURNING id, created_at`)).
-					WithArgs("New Group", nil, nil, int64(999)).
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type, name, title, description, owner_id) VALUES ($1, 'group', $2, $3, $4, $5) RETURNING created_at`)).
+					WithArgs(chatID, "New Group", nil, nil, ownerID).
 					WillReturnError(errDBQueryFailed)
 
 				mock.ExpectRollback()
@@ -317,21 +342,22 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 		{
 			name: "Error - Commit Failed",
 			input: &model.GroupChat{
+				ChatID:         chatID,
 				Name:           "Group",
-				OwnerID:        1,
+				OwnerID:        ownerID,
 				Title:          nil,
 				Description:    nil,
-				ParticipantIDs: []int64{1},
+				ParticipantIDs: []uuid.UUID{ownerID},
 			},
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (type, name, title, description, owner_id) VALUES ('group', $1, $2, $3, $4) RETURNING id, created_at`)).
-					WithArgs("Group", nil, nil, int64(1)).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow(10, now))
+				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO chats (id, type, name, title, description, owner_id) VALUES ($1, 'group', $2, $3, $4, $5) RETURNING created_at`)).
+					WithArgs(chatID, "Group", nil, nil, ownerID).
+					WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow(now))
 
 				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)`)).
-					WithArgs(int64(10), int64(1)).
+					WithArgs(chatID, ownerID).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 
 				mock.ExpectCommit().WillReturnError(errCommitFailed)
@@ -360,7 +386,7 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 				}
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, int64(2), tt.input.ChatID)
+				assert.Equal(t, chatID, tt.input.ChatID)
 				assert.Equal(t, now, tt.input.CreatedAt)
 			}
 
@@ -371,6 +397,9 @@ func TestPostgresRepository_CreateGroupChat(t *testing.T) {
 
 func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 	now := time.Now()
+	userID := uuid.New()
+	chatID := uuid.New()
+	ownerID := uuid.New()
 
 	query := `
         SELECT
@@ -388,7 +417,7 @@ func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		userID            int64
+		userID            uuid.UUID
 		limit             int
 		offset            int
 		mock              func(mock sqlmock.Sqlmock)
@@ -397,29 +426,29 @@ func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 	}{
 		{
 			name:   "Success",
-			userID: 1,
+			userID: userID,
 			limit:  10,
 			offset: 0,
 			mock: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"id", "type", "name", "title", "description", "created_at", "owner_id"}).
-					AddRow(int64(5), "group", "group", nil, nil, now, int64(1))
+					AddRow(chatID, "group", "group", nil, nil, now, ownerID)
 
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(int64(1), 10, 0).
+					WithArgs(userID, 10, 0).
 					WillReturnRows(rows)
 			},
 			wantErr: false,
 		},
 		{
 			name:   "Error - Chats Not Found",
-			userID: 1,
+			userID: userID,
 			limit:  10,
 			offset: 0,
 			mock: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"id", "type", "name", "title", "description", "created_at", "owner_id"})
 
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(int64(1), 10, 0).
+					WithArgs(userID, 10, 0).
 					WillReturnRows(rows)
 			},
 			wantErr:           true,
@@ -427,12 +456,12 @@ func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 		},
 		{
 			name:   "Error - Query Failed",
-			userID: 1,
+			userID: userID,
 			limit:  10,
 			offset: 0,
 			mock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(int64(1), 10, 0).
+					WithArgs(userID, 10, 0).
 					WillReturnError(errDBQueryFailed)
 			},
 			wantErr:           true,
@@ -462,7 +491,7 @@ func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 				require.NotNil(t, chats)
 				require.Len(t, chats, 1)
 
-				assert.Equal(t, int64(5), chats[0].ChatID)
+				assert.Equal(t, chatID, chats[0].ChatID)
 				assert.Equal(t, "group", chats[0].ChatType)
 				assert.Equal(t, "group", *chats[0].Name)
 			}
@@ -474,6 +503,9 @@ func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 
 func TestPostgresRepository_UpdateGroupChat(t *testing.T) {
 	now := time.Now()
+	chatID := uuid.New()
+	updaterID := uuid.New()
+	newOwnerID := uuid.New()
 
 	expectedQuery := `
 		UPDATE chats
@@ -500,12 +532,12 @@ func TestPostgresRepository_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Success",
 			input: &model.UpdateGroupChat{
-				ChatID:        10,
+				ChatID:        chatID,
 				Name:          ptr("Updated Name"),
 				Title:         ptr("Updated Title"),
 				Description:   ptr("Updated Description"),
-				OwnerID:       ptr(int64(2)),
-				UserIDUpdater: 1,
+				OwnerID:       ptr(newOwnerID),
+				UserIDUpdater: updaterID,
 			},
 			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateGroupChat) {
 				rows := sqlmock.NewRows([]string{"name", "title", "description", "created_at", "owner_id"}).
@@ -528,12 +560,12 @@ func TestPostgresRepository_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Error - Chat Not Found",
 			input: &model.UpdateGroupChat{
-				ChatID:        10,
+				ChatID:        chatID,
 				Name:          ptr("Updated Name"),
 				Title:         ptr("Updated Title"),
 				Description:   ptr("Updated Description"),
-				OwnerID:       ptr(int64(2)),
-				UserIDUpdater: 1,
+				OwnerID:       ptr(newOwnerID),
+				UserIDUpdater: updaterID,
 			},
 			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateGroupChat) {
 				mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
@@ -549,12 +581,12 @@ func TestPostgresRepository_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Error - Unique Violation",
 			input: &model.UpdateGroupChat{
-				ChatID:        10,
+				ChatID:        chatID,
 				Name:          ptr("Updated Name"),
 				Title:         ptr("Updated Title"),
 				Description:   ptr("Updated Description"),
-				OwnerID:       ptr(int64(2)),
-				UserIDUpdater: 1,
+				OwnerID:       ptr(newOwnerID),
+				UserIDUpdater: updaterID,
 			},
 			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateGroupChat) {
 				pgErr := &pgconn.PgError{
@@ -574,12 +606,12 @@ func TestPostgresRepository_UpdateGroupChat(t *testing.T) {
 		{
 			name: "Error - Bind Named Params",
 			input: &model.UpdateGroupChat{
-				ChatID:        10,
+				ChatID:        chatID,
 				Name:          ptr("Updated Name"),
 				Title:         ptr("Updated Title"),
 				Description:   ptr("Updated Description"),
-				OwnerID:       ptr(int64(2)),
-				UserIDUpdater: 1,
+				OwnerID:       ptr(newOwnerID),
+				UserIDUpdater: updaterID,
 			},
 			mock: func(mock sqlmock.Sqlmock, chat *model.UpdateGroupChat) {
 				mock.ExpectQuery(`UPDATE chats SET *`).

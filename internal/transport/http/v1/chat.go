@@ -8,6 +8,7 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -91,13 +92,13 @@ func (h *Handler) GetChatsByUserID(c *gin.Context) {
 		return
 	}
 
-	userID, err := strconv.ParseInt(userIdParam, 10, 64)
+	userID, err := uuid.Parse(userIdParam)
 	if err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "bad_request",
-			Message:    "failed to convert parameter 'user_id' to int64",
-			Err:        fmt.Errorf("failed to convert parameter 'user_id' to int64: %v", err),
+			Message:    "failed to parse parameter 'user_id' as uuid",
+			Err:        fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
 		})
 		return
 	}
@@ -201,13 +202,13 @@ func (h *Handler) UpdateGroupChat(c *gin.Context) {
 		return
 	}
 
-	chatID, err := strconv.ParseInt(chatIdParam, 10, 64)
+	chatID, err := uuid.Parse(chatIdParam)
 	if err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "bad_request",
-			Message:    "failed to convert parameter 'chat_id' to int64",
-			Err:        fmt.Errorf("failed to convert parameter 'chat_id' to int64: %v", err),
+			Message:    "failed to parse parameter 'chat_id' as uuid",
+			Err:        fmt.Errorf("failed to parse parameter 'chat_id' as uuid: %v", err),
 		})
 		return
 	}
@@ -262,13 +263,13 @@ func (h *Handler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	chatID, err := strconv.ParseInt(chatIdParam, 10, 64)
+	chatID, err := uuid.Parse(chatIdParam)
 	if err != nil {
 		c.Error(&errs.HttpError{
 			StatusCode: http.StatusBadRequest,
 			Code:       "bad_request",
-			Message:    "failed to convert parameter 'chat_id' to int64",
-			Err:        fmt.Errorf("failed to convert parameter 'chat_id' to int64: %v", err),
+			Message:    "failed to parse parameter 'chat_id' as uuid",
+			Err:        fmt.Errorf("failed to parse parameter 'chat_id' as uuid: %v", err),
 		})
 		return
 	}

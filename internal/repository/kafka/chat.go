@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/database"
@@ -32,7 +31,7 @@ func (k *KafkaRepository) SendMessage(ctx context.Context, message *model.SendMe
 		return k.producer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 			Value:          values,
-			Key:            []byte(strconv.FormatInt(message.ChatID, 10)),
+			Key:            message.ChatID[:],
 		}, nil)
 	}
 }

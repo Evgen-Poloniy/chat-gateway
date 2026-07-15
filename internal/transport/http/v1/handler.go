@@ -5,6 +5,7 @@ import (
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/ws"
+	"github.com/google/uuid"
 )
 
 // MessengerService represents interface for work with messenger business logic.
@@ -18,10 +19,10 @@ type MessengerService interface {
 	GetUserDataByUsername(ctx context.Context, username string) (*entity.User, error)
 
 	// GetUserDataByUserID gets all data about user from the messenger database by user_id.
-	GetUserDataByUserID(ctx context.Context, userID int64) (*entity.User, error)
+	GetUserDataByUserID(ctx context.Context, userID uuid.UUID) (*entity.User, error)
 
 	// GetUserIDsByChatID gets user_id by all users who are in the chat.
-	GetUserIDsByChatID(ctx context.Context, chatID int64) ([]int64, error)
+	GetUserIDsByChatID(ctx context.Context, chatID uuid.UUID) (uuid.UUIDs, error)
 
 	// UpdateUser updates data about user into messenger database.
 	UpdateUser(ctx context.Context, user *entity.UpdateUser) error
@@ -35,7 +36,7 @@ type MessengerService interface {
 	CreateGroupChat(ctx context.Context, chat *entity.GroupChat) error
 
 	// GetChatsByUserID gets chat by user_id with limits and offset.
-	GetChatsByUserID(ctx context.Context, userID int64, limit, offset int) ([]entity.Chat, error)
+	GetChatsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]entity.Chat, error)
 
 	// UpdateGroupChat updates data about chat like name, title, description, owner.
 	UpdateGroupChat(ctx context.Context, chat *entity.UpdateGroupChat) error
