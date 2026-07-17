@@ -62,7 +62,7 @@ func NewLogrusLogger(cfg *config.LoggerConfig) (*logrus.Logger, error) {
 	}
 
 	for _, filename := range cfg.Files {
-		file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open file %s: %w", filename, err)
 		}
