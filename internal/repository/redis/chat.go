@@ -15,7 +15,7 @@ func (r *RedisCache) AddChatMembers(ctx context.Context, chatID string, userIDs 
 
 	pipe.SAdd(ctx, key, userIDs)
 
-	pipe.Expire(ctx, key, r.chatConf.Ttl)
+	pipe.Expire(ctx, key, r.chatConf.ChatTtl)
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
@@ -36,7 +36,7 @@ func (r *RedisCache) RemoveChatUser(ctx context.Context, chatID string, userID s
 
 	pipe.SRem(ctx, key, userID)
 
-	pipe.Expire(ctx, key, r.chatConf.Ttl)
+	pipe.Expire(ctx, key, r.chatConf.ChatTtl)
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
@@ -54,7 +54,7 @@ func (r *RedisCache) RemoveChatUser(ctx context.Context, chatID string, userID s
 func (r *RedisCache) ExpireChatID(ctx context.Context, chatID string) error {
 	key := fmt.Sprintf("chat:%s:members", chatID)
 
-	_, err := r.rdb.Expire(ctx, key, r.chatConf.Ttl).Result()
+	_, err := r.rdb.Expire(ctx, key, r.chatConf.ChatTtl).Result()
 	if err != nil {
 		return errs.NewAppError(
 			errs.CodeRedisError,

@@ -96,26 +96,17 @@ type RedisConfig struct {
 	DialTimeout  time.Duration `yaml:"dial_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
 	ReadTimeout  time.Duration `yaml:"read_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
 	WriteTimeout time.Duration `yaml:"write_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
+	ChatTtl      time.Duration `yaml:"chat_ttl" env-default:"24h" validate:"gte=1h,lte=48h"`
 }
 
-// RedisConfig represents chat config for Redis.
-type RedisChatConfig struct {
-	Ttl time.Duration `yaml:"ttl" env-default:"24h" validate:"gte=1h,lte=48h"`
+// ResolverConfig represents pub/sub config.
+type ResolverConfig struct {
+	EventChannelCap int `yaml:"event_cap" validate:"gte=1"`
 }
 
-// ChatConfig represents chat config.
-type ChatConfig struct {
-	Redis RedisChatConfig `yaml:"redis"`
-}
-
-// RedisPubSubConfig represents  config for Redis.
-type RedisPubSubConfig struct {
-	PubSubChannelCap int `yaml:"pub_sub_cap" validate:"gte=1"`
-}
-
-// DispatchingConfig represents pub/sub config.
+// DispatchConfig represents dispatch config.
 type DispatchConfig struct {
-	Redis RedisPubSubConfig `yaml:"redis"`
+	SendChannelCap int `yaml:"send_cap" validate:"gte=1"`
 }
 
 // Config represents dataclass with all configs.
@@ -126,8 +117,8 @@ type Config struct {
 	Postgres PostgresConfig `yaml:"postgres"`
 	Kafka    KafkaConfig    `yaml:"kafka"`
 	Redis    RedisConfig    `yaml:"redis"`
-	Chat     ChatConfig     `yaml:"chat"`
-	PubSub   DispatchConfig `yaml:"dispatching"`
+	Resolver ResolverConfig `yaml:"resolver"`
+	Dispatch DispatchConfig `yaml:"dispatch"`
 }
 
 // Load config from config/config.yaml.

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
@@ -29,23 +30,29 @@ var _serverAddress string
 
 // wsHub manages WebSocket connections
 type Hub struct {
-	resolver ResolverService
-	upgrader websocket.Upgrader
-	mu       sync.RWMutex
-	conns    map[uuid.UUID]map[*websocket.Conn]*Client
-	logger   *logrus.Logger
+	resolver      ResolverService
+	dispatchConf  *config.DispatchConfig
+	upgrader      websocket.Upgrader
+	serverAddress string
+	mu            sync.RWMutex
+	conns         map[uuid.UUID]map[*websocket.Conn]*Client
+	logger        *logrus.Logger
 
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
-func NewHub(resolver ResolverService, serverAddress string, logger *logrus.Logger) *Hub {
+func NewHub(
+	resolver ResolverService,
+	dispatchConf *config.DispatchConfig,
+	serverAddress string,
+	logger *logrus.Logger,
+) *Hub {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	_serverAddress = serverAddress
-
 	return &Hub{
-		resolver: resolver,
+		resolver:     resolver,
+		dispatchConf: dispatchConf,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -53,10 +60,11 @@ func NewHub(resolver ResolverService, serverAddress string, logger *logrus.Logge
 				return true
 			},
 		},
-		conns:  make(map[uuid.UUID]map[*websocket.Conn]*Client),
-		logger: logger,
-		ctx:    ctx,
-		cancel: cancel,
+		serverAddress: serverAddress,
+		conns:         make(map[uuid.UUID]map[*websocket.Conn]*Client),
+		logger:        logger,
+		ctx:           ctx,
+		cancel:        cancel,
 	}
 }
 
@@ -105,7 +113,7 @@ func (h *Hub) StartDispatchMessage() {
 				return
 			}
 
-			logError(h.logger, uuid.NewString(), err)
+			logError(h.logger, uuid.NewString(), h.serverAddress, err)
 
 			if appErr, exists := errors.AsType[*errs.AppError](err); exists {
 				if appErr.Code == errs.CodeFailedEventChannel {
@@ -149,11 +157,12 @@ func (h *Hub) broadcastMessage(userIDs uuid.UUIDs, message dto.DispatchMessage) 
 			id := uuid.NewString()
 
 			logWarn(h.logger, id,
+				h.serverAddress,
 				fmt.Sprintf("the client with user_id '%s' has been disconnected because of bad network", client.userID.String()),
 			)
 
 			if err := client.conn.Close(); err != nil {
-				logError(h.logger, id, err)
+				logError(h.logger, id, h.serverAddress, err)
 			}
 		}
 	}
@@ -171,7 +180,7 @@ func (h *Hub) writeMessage(client *Client) {
 			}
 
 			if err := client.conn.WriteJSON(message); err != nil {
-				logError(h.logger, uuid.NewString(), fmt.Errorf("websocket error: %v", err))
+				logError(h.logger, uuid.NewString(), h.serverAddress, fmt.Errorf("websocket error: %v", err))
 				return
 			}
 		}
@@ -227,7 +236,7 @@ func (h *Hub) readMessage(client *Client) {
 			case websocket.CloseNormalClosure, websocket.CloseGoingAway:
 				h.logger.WithFields(map[string]interface{}{
 					"id":         uuid.NewString(),
-					"address":    _serverAddress,
+					"address":    h.serverAddress,
 					"code":       "normal_closure",
 					"close_code": closeCode,
 				}).Info(message)
@@ -235,7 +244,7 @@ func (h *Hub) readMessage(client *Client) {
 			default:
 				h.logger.WithFields(map[string]interface{}{
 					"id":         uuid.NewString(),
-					"address":    _serverAddress,
+					"address":    h.serverAddress,
 					"close_code": closeCode,
 					"code":       code,
 				}).Error(message)
@@ -248,7 +257,7 @@ func (h *Hub) readMessage(client *Client) {
 			continue
 		}
 
-		logInfo(h.logger, uuid.NewString(), string(payload))
+		logInfo(h.logger, uuid.NewString(), h.serverAddress, string(payload))
 	}
 }
 

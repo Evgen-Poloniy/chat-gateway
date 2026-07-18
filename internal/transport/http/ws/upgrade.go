@@ -45,7 +45,7 @@ func (h *Handler) WebSocketUpgrade(c *gin.Context) {
 		return
 	}
 
-	client := NewClient(userID, conn)
+	client := NewClient(userID, conn, h.wsHub.dispatchConf.SendChannelCap)
 
 	h.wsHub.register(client)
 

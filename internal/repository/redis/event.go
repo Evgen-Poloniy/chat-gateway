@@ -11,7 +11,7 @@ import (
 
 // SubscribeOnEventChannel subscribes on broker channel once fro all time of work application.
 func (r *RedisCache) SubscribeOnEventChannel(ctx context.Context) {
-	r.eventChan = make(chan model.Event, r.dispConf.PubSubChannelCap)
+	r.eventChan = make(chan model.Event, r.chatConf.ChatTtl)
 	pubsub := r.rdb.Subscribe(ctx, "events:users:dispatch")
 
 	go func() {

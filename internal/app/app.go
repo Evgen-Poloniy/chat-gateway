@@ -91,13 +91,13 @@ func Run() {
 	messengerRepository := pg.NewPostgresRepository(db)
 	messageBroker := kf.NewKafkaRepository(producer)
 
-	cache := rds.NewRedisCache(rdb, &config.Chat.Redis, &config.PubSub.Redis)
+	cache := rds.NewRedisCache(rdb, &config.Redis, &config.Resolver)
 
 	messenger := messenger.NewMessengerService(messengerRepository, messageBroker, cache)
 	resolver := resolver.NewResolverService(cache, cache)
 
 	address := fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port)
-	wsHub := ws.NewHub(resolver, address, logger)
+	wsHub := ws.NewHub(resolver, &config.Dispatch, address, logger)
 	v1Handler := v1.NewHandler(messenger, wsHub)
 	wsHandler := ws.NewHandler(wsHub, logger)
 	router := router.NewRouter(&config.CORS, logger)

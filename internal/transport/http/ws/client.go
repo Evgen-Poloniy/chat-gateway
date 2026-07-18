@@ -13,10 +13,10 @@ type Client struct {
 	send   chan dto.DispatchMessage
 }
 
-func NewClient(userID uuid.UUID, conn *websocket.Conn) *Client {
+func NewClient(userID uuid.UUID, conn *websocket.Conn, sendCap int) *Client {
 	return &Client{
 		userID: userID,
 		conn:   conn,
-		send:   make(chan dto.DispatchMessage, 64),
+		send:   make(chan dto.DispatchMessage, sendCap),
 	}
 }
