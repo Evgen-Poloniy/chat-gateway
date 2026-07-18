@@ -11,8 +11,6 @@ server:
 logger:
   level: info
   format: text
-  output: stdout
-  files:
 
 # CORS policy
 cors:

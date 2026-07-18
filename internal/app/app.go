@@ -50,15 +50,7 @@ func Run() {
 		logrus.Fatalf("error when loading config: %v", err)
 	}
 
-	logger, err := logs.NewLogrusLogger(&config.Logger)
-	if err != nil {
-		logrus.Fatalf("error when loading the logger: %v", err)
-	}
-	defer func() {
-		if err := logs.Close(); err != nil {
-			logger.Errorf("error when closing the logger: %v", err)
-		}
-	}()
+	logger := logs.NewLogrusLogger(&config.Logger)
 
 	db, err := database.NewPostgreSQL(&config.Postgres)
 	if err != nil {

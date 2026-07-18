@@ -41,10 +41,8 @@ type ServerConfig struct {
 
 // Logger config from config.yaml.
 type LoggerConfig struct {
-	Level  string   `yaml:"level" env-default:"info" validate:"oneof=trace debug info warn error panic fatal"`
-	Format string   `yaml:"format" env-default:"json" validate:"oneof=text json"`
-	Output string   `yaml:"output" env-default:"stdout" validate:"oneof=stdout stderr"`
-	Files  []string `yaml:"files"`
+	Level  string `yaml:"level" env-default:"info" validate:"oneof=trace debug info warn error panic fatal"`
+	Format string `yaml:"format" env-default:"json" validate:"oneof=text json"`
 }
 
 // CORSConfig is the config for CORS policy.
