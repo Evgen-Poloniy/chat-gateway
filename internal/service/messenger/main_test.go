@@ -16,12 +16,12 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
-func setupMockService(ctrl *gomock.Controller) (*messenger.MessengerService, *mock_repository.MockMessengerRepository, *mock_repository.MockMessageBroker) {
+func setupMockService(ctrl *gomock.Controller) (*messenger.MessengerService, *mock_repository.MockMessengerRepository, *mock_repository.MockMessageBroker, *mock_repository.MockMessengerCache) {
 	mockRepo := mock_repository.NewMockMessengerRepository(ctrl)
 	mockBroker := mock_repository.NewMockMessageBroker(ctrl)
 	mockCache := mock_repository.NewMockMessengerCache(ctrl)
 
 	svc := messenger.NewMessengerService(mockRepo, mockBroker, mockCache)
 
-	return svc, mockRepo, mockBroker
+	return svc, mockRepo, mockBroker, mockCache
 }

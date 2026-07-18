@@ -83,3 +83,11 @@ redis:
   dial_timeout: 1s
   read_timeout: 1s
   write_timeout: 1s
+
+chat:
+  redis:
+    ttl: 24h
+
+dispatch:
+  redis:
+    pub_sub_cap: 100

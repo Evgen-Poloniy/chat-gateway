@@ -1,12 +1,15 @@
 package errs
 
-import "errors"
+import (
+	"errors"
+)
 
 type ErrCode int
 
 const (
 	CodeUserNotFound ErrCode = iota
 	CodeChatNotFound
+	CodeUsersNotFound
 	CodeUserHaveNotChats
 	CodeUniqueViolation
 	CodeForeignKeyViolation
@@ -19,7 +22,35 @@ const (
 	CodeChatIdIsRequired
 	CodeInvalidParameter
 	CodeValidationError
+	CodeRedisError
+	CodeFailedToExpireKey
+	CodeFailedEventChannel
+	CodeEmptyUserIDs
+	ErrCodeDeliveryFailed
 )
+
+var MapToString = map[ErrCode]string{
+	CodeUserNotFound:         "user_not_found",
+	CodeChatNotFound:         "chat_not_found",
+	CodeUsersNotFound:        "users_not_found",
+	CodeUserHaveNotChats:     "user_has_no_chats",
+	CodeUniqueViolation:      "unique_violation",
+	CodeForeignKeyViolation:  "foreign_key_violation",
+	CodeQueryError:           "database_query_error",
+	CodeTransactionError:     "database_transaction_error",
+	CodeSerializationError:   "internal_server_error",
+	CodeDeserializationError: "internal_server_error",
+	CodeUsernameIsRequired:   "username_is_required",
+	CodeUserIdIsRequired:     "user_id_is_required",
+	CodeChatIdIsRequired:     "chat_id_is_required",
+	CodeInvalidParameter:     "invalid_parameter",
+	CodeValidationError:      "validation_error",
+	CodeRedisError:           "redis_error",
+	CodeFailedToExpireKey:    "failed_to_expire_key",
+	CodeFailedEventChannel:   "failed_event_channel",
+	CodeEmptyUserIDs:         "empty_user_ids",
+	ErrCodeDeliveryFailed:    "delivery_failed",
+}
 
 // App error
 type AppError struct {
@@ -67,9 +98,16 @@ func NewHttpError(code string, statusCode int, message string, err error) *HttpE
 	}
 }
 
+// Repository errors.
+var (
+	ErrFailedEventChannel = errors.New("redis pubsub channel closed unexpectedly")
+)
+
 // Validation errors.
 var (
-	ErrInvalidChatID = errors.New("invalid chat_id")
+	ErrInvalidChatID            = errors.New("invalid chat_id")
+	ErrEmptyUserIDs             = errors.New("empty list of user ids")
+	ErrUserIDsConversionFailure = errors.New("user ids conversion failure")
 )
 
 // Transport errors.

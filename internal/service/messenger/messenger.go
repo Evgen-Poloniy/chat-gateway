@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//go:generate mockgen -source=$GOFILE -destination=mocks/messenger_mocks.go -package=mock_repository
+//go:generate mockgen -source=$GOFILE -destination=mocks/messenger_mocks.go -package=mock_messenger_repository
 
 // MessengerRepository represents interface for work with the messenger database.
 type MessengerRepository interface {
@@ -48,14 +48,25 @@ type MessengerRepository interface {
 	UpdateGroupChat(ctx context.Context, chat *model.UpdateGroupChat) error
 }
 
-// MessageBroker represents interface for work with the messenger broker
+// MessageBroker represents interface for work with the messenger broker.
 type MessageBroker interface {
 	// SendMessage sends message into target chat.
 	SendMessage(ctx context.Context, message *model.SendMessage) error
 }
 
-// MessengerCache represents interface for work with the messenger cache
+// MessengerCache represents interface for work with the messenger cache.
 type MessengerCache interface {
+	// AddChatMembers writes user_ids at cache by key chat_id.
+	AddChatMembers(ctx context.Context, chatID string, userIDs []string) error
+
+	// RemoveChatUser removes user from Redis by chat_id.
+	RemoveChatUser(ctx context.Context, chatID string, userID string) error
+
+	// ExpireChatID expire key TTL
+	ExpireChatID(ctx context.Context, chatID string) error
+
+	// GetChatMembers allows get user_ids from cache by chat_id.
+	GetChatMembers(ctx context.Context, chatID string) ([]string, error)
 }
 
 // MessengerService represents implementation of messenger interface.

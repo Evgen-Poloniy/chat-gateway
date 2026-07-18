@@ -26,7 +26,7 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 	tests := []struct {
 		name              string
 		input             *entity.DirectChat
-		mock              func(mock *mock_repository.MockMessengerRepository)
+		mock              func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache)
 		wantErr           bool
 		expectedErrorCode errs.ErrCode
 	}{
@@ -35,14 +35,18 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 			input: &entity.DirectChat{
 				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 			},
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					CreateDirectChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.DirectChat) error {
 						m.ChatID = uuid.New()
 						m.CreatedAt = time.Now()
 						return nil
 					})
+
+				mockCache.EXPECT().
+					AddChatMembers(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil)
 			},
 			wantErr: false,
 		},
@@ -51,8 +55,8 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 			input: &entity.DirectChat{
 				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New()},
 			},
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					CreateDirectChat(gomock.Any(), gomock.Any()).
 					Return(errRepoQueryError)
 			},
@@ -64,7 +68,8 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 			input: &entity.DirectChat{
 				ParticipantIDs: nil,
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -73,7 +78,8 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 			input: &entity.DirectChat{
 				ParticipantIDs: []uuid.UUID{uuid.New()},
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -82,7 +88,8 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 			input: &entity.DirectChat{
 				ParticipantIDs: []uuid.UUID{uuid.New(), uuid.New(), uuid.New()},
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -93,9 +100,9 @@ func TestMessengerService_CreateDirectChat(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			svc, mockRepo, _ := setupMockService(ctrl)
+			svc, mockRepo, _, mockCache := setupMockService(ctrl)
 
-			tt.mock(mockRepo)
+			tt.mock(mockRepo, mockCache)
 
 			err := svc.CreateDirectChat(context.Background(), tt.input)
 
@@ -121,7 +128,7 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 	tests := []struct {
 		name              string
 		input             *entity.GroupChat
-		mock              func(mock *mock_repository.MockMessengerRepository)
+		mock              func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache)
 		wantErr           bool
 		expectedErrorCode errs.ErrCode
 	}{
@@ -132,14 +139,18 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Name:           "Dev Team",
 				OwnerID:        uuid.New(),
 			},
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					CreateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.GroupChat) error {
 						m.ChatID = generatedChatID
 						m.CreatedAt = now
 						return nil
 					})
+
+				mockCache.EXPECT().
+					AddChatMembers(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil)
 			},
 			wantErr: false,
 		},
@@ -152,14 +163,18 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Description:    ptr(strings.Repeat("C", 255)),
 				OwnerID:        uuid.New(),
 			},
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					CreateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.GroupChat) error {
 						m.ChatID = generatedChatID
 						m.CreatedAt = now
 						return nil
 					})
+
+				mockCache.EXPECT().
+					AddChatMembers(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil)
 			},
 			wantErr: false,
 		},
@@ -170,8 +185,8 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Name:           "Dev Team",
 				OwnerID:        uuid.New(),
 			},
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					CreateGroupChat(gomock.Any(), gomock.Any()).
 					Return(errRepoQueryError)
 			},
@@ -185,7 +200,8 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Name:           "",
 				OwnerID:        uuid.New(),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -196,7 +212,8 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Name:           strings.Repeat("A", 65),
 				OwnerID:        uuid.New(),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -208,7 +225,8 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Title:          ptr(strings.Repeat("A", 65)),
 				OwnerID:        uuid.New(),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -220,7 +238,8 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Description:    ptr(strings.Repeat("A", 256)),
 				OwnerID:        uuid.New(),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -231,7 +250,8 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Name:           "Dev Team",
 				OwnerID:        uuid.Nil,
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -242,7 +262,8 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Name:           "Dev Team",
 				OwnerID:        uuid.New(),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -253,7 +274,8 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 				Name:           "Dev Team",
 				OwnerID:        uuid.New(),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -264,9 +286,9 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			svc, mockRepo, _ := setupMockService(ctrl)
+			svc, mockRepo, _, mockCache := setupMockService(ctrl)
 
-			tt.mock(mockRepo)
+			tt.mock(mockRepo, mockCache)
 
 			err := svc.CreateGroupChat(context.Background(), tt.input)
 
@@ -295,7 +317,7 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 		userID            uuid.UUID
 		limit             int
 		offset            int
-		mock              func(mock *mock_repository.MockMessengerRepository)
+		mock              func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache)
 		wantErr           bool
 		expectedErrorCode errs.ErrCode
 	}{
@@ -304,8 +326,8 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 			userID: userID,
 			limit:  10,
 			offset: 0,
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					GetChatsByUserID(gomock.Any(), userID, 10, 0).
 					Return([]model.Chat{
 						{ChatID: chatID, ChatType: "direct", Name: ptr("Chat 1"), OwnerID: ptr(ownerID)},
@@ -318,8 +340,8 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 			userID: uuid.New(),
 			limit:  10,
 			offset: 0,
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					GetChatsByUserID(gomock.Any(), gomock.Any(), 10, 0).
 					Return([]model.Chat{}, nil)
 			},
@@ -330,8 +352,8 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 			userID: userID,
 			limit:  10,
 			offset: 0,
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					GetChatsByUserID(gomock.Any(), userID, 10, 0).
 					Return(nil, errRepoQueryError)
 			},
@@ -345,9 +367,9 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			svc, mockRepo, _ := setupMockService(ctrl)
+			svc, mockRepo, _, mockCache := setupMockService(ctrl)
 
-			tt.mock(mockRepo)
+			tt.mock(mockRepo, mockCache)
 
 			chats, err := svc.GetChatsByUserID(context.Background(), tt.userID, tt.limit, tt.offset)
 
@@ -378,7 +400,7 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 	tests := []struct {
 		name              string
 		input             *entity.UpdateGroupChat
-		mock              func(mock *mock_repository.MockMessengerRepository)
+		mock              func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache)
 		wantErr           bool
 		expectedErrorCode errs.ErrCode
 	}{
@@ -389,13 +411,17 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				ChatID:        chatID,
 				Name:          ptr("New Name"),
 			},
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					UpdateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
 						m.CreatedAt = now
 						return nil
 					})
+
+				mockCache.EXPECT().
+					ExpireChatID(gomock.Any(), chatID.String()).
+					Return(nil)
 			},
 			wantErr: false,
 		},
@@ -409,13 +435,17 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				Description:   ptr(strings.Repeat("C", 255)),
 				OwnerID:       ptr(newOwnerID),
 			},
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					UpdateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
 						m.CreatedAt = now
 						return nil
 					})
+
+				mockCache.EXPECT().
+					ExpireChatID(gomock.Any(), chatID.String()).
+					Return(nil)
 			},
 			wantErr: false,
 		},
@@ -426,8 +456,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				ChatID:        chatID,
 				Name:          ptr("New Name"),
 			},
-			mock: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockRepo.EXPECT().
 					UpdateGroupChat(gomock.Any(), gomock.Any()).
 					Return(errRepoQueryError)
 			},
@@ -440,7 +470,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				UserIDUpdater: uuid.Nil,
 				ChatID:        chatID,
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -450,7 +481,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				UserIDUpdater: updaterID,
 				ChatID:        uuid.Nil,
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -461,7 +493,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				ChatID:        chatID,
 				Name:          ptr(strings.Repeat("A", 65)),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -472,7 +505,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				ChatID:        chatID,
 				Name:          ptr(""),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -483,7 +517,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				ChatID:        chatID,
 				Title:         ptr(strings.Repeat("A", 65)),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -494,7 +529,8 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				ChatID:        chatID,
 				Description:   ptr(strings.Repeat("A", 256)),
 			},
-			mock:              func(mock *mock_repository.MockMessengerRepository) {},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -505,9 +541,9 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			svc, mockRepo, _ := setupMockService(ctrl)
+			svc, mockRepo, _, mockCache := setupMockService(ctrl)
 
-			tt.mock(mockRepo)
+			tt.mock(mockRepo, mockCache)
 
 			err := svc.UpdateGroupChat(context.Background(), tt.input)
 
@@ -529,7 +565,7 @@ func TestMessengerService_SendMessage(t *testing.T) {
 	tests := []struct {
 		name              string
 		input             *entity.SendMessage
-		mock              func(mock *mock_repository.MockMessageBroker)
+		mock              func(mockBroker *mock_repository.MockMessageBroker)
 		wantErr           bool
 		expectedErrorCode errs.ErrCode
 	}{
@@ -540,8 +576,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.New(),
 				Message:  "Hello World",
 			},
-			mock: func(mock *mock_repository.MockMessageBroker) {
-				mock.EXPECT().
+			mock: func(mockBroker *mock_repository.MockMessageBroker) {
+				mockBroker.EXPECT().
 					SendMessage(gomock.Any(), gomock.Any()).
 					Return(nil)
 			},
@@ -554,8 +590,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.New(),
 				Message:  strings.Repeat("A", 4096),
 			},
-			mock: func(mock *mock_repository.MockMessageBroker) {
-				mock.EXPECT().
+			mock: func(mockBroker *mock_repository.MockMessageBroker) {
+				mockBroker.EXPECT().
 					SendMessage(gomock.Any(), gomock.Any()).
 					Return(nil)
 			},
@@ -568,8 +604,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.New(),
 				Message:  "Hello World",
 			},
-			mock: func(mock *mock_repository.MockMessageBroker) {
-				mock.EXPECT().
+			mock: func(mockBroker *mock_repository.MockMessageBroker) {
+				mockBroker.EXPECT().
 					SendMessage(gomock.Any(), gomock.Any()).
 					Return(errBrokerError)
 			},
@@ -583,7 +619,7 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.New(),
 				Message:  "Hello World",
 			},
-			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			mock:              func(mockBroker *mock_repository.MockMessageBroker) {},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -594,7 +630,7 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.Nil,
 				Message:  "Hello World",
 			},
-			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			mock:              func(mockBroker *mock_repository.MockMessageBroker) {},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -605,7 +641,7 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.New(),
 				Message:  "",
 			},
-			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			mock:              func(mockBroker *mock_repository.MockMessageBroker) {},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -616,7 +652,7 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.New(),
 				Message:  strings.Repeat("A", 4097),
 			},
-			mock:              func(mock *mock_repository.MockMessageBroker) {},
+			mock:              func(mockBroker *mock_repository.MockMessageBroker) {},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -627,7 +663,7 @@ func TestMessengerService_SendMessage(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			svc, _, mockBroker := setupMockService(ctrl)
+			svc, _, mockBroker, _ := setupMockService(ctrl)
 
 			tt.mock(mockBroker)
 

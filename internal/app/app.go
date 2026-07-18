@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 	rds "github.com/Evgen-Poloniy/chat-gateway/internal/repository/redis"
 	httpserver "github.com/Evgen-Poloniy/chat-gateway/internal/server/http"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/service/resolver"
 	router "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http"
 	v1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/v1"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/ws"
@@ -96,12 +98,17 @@ func Run() {
 
 	messengerRepository := pg.NewPostgresRepository(db)
 	messageBroker := kf.NewKafkaRepository(producer)
-	messengerCache := rds.NewRedisCache(rdb)
-	messenger := messenger.NewMessengerService(messengerRepository, messageBroker, messengerCache)
-	router := router.NewRouter(&config.CORS, logger)
-	wsHub := ws.NewHub()
+
+	cache := rds.NewRedisCache(rdb, &config.Chat.Redis, &config.PubSub.Redis)
+
+	messenger := messenger.NewMessengerService(messengerRepository, messageBroker, cache)
+	resolver := resolver.NewResolverService(cache, cache)
+
+	address := fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port)
+	wsHub := ws.NewHub(resolver, address, logger)
 	v1Handler := v1.NewHandler(messenger, wsHub)
 	wsHandler := ws.NewHandler(wsHub, logger)
+	router := router.NewRouter(&config.CORS, logger)
 	v1.NewRouter(router, v1Handler, apiKeyHash)
 	ws.NewRouter(router, wsHandler)
 
@@ -113,10 +120,18 @@ func Run() {
 	go func() {
 		defer wg.Done()
 
-		logger.Infof("http server is running on %s:%d", config.Server.Host, config.Server.Port)
+		logger.Infof("http server is running on %s", address)
 		if err := httpServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Errorf("http server error: %v", err)
 		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		logger.Info("starting dispatch messages worker")
+		wsHub.StartDispatchMessage()
 	}()
 
 	quit := make(chan os.Signal, 1)
@@ -129,6 +144,9 @@ func Run() {
 		config.Server.TimeForGracefulShutdown*time.Second,
 	)
 	defer cancel()
+
+	logger.Info("shutting down dispatch messages worker")
+	wsHub.ShutdownDispatchMessage(ctx)
 
 	logger.Info("shutting down server")
 	if err := httpServer.Shutdown(ctx); err != nil {

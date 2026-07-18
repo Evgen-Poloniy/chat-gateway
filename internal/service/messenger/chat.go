@@ -15,7 +15,7 @@ func (m *MessengerService) CreateDirectChat(ctx context.Context, chat *entity.Di
 	}
 
 	chatModel := model.DirectChat{
-		ChatID: uuid.New(),
+		ChatID:         uuid.New(),
 		ParticipantIDs: chat.ParticipantIDs,
 	}
 
@@ -25,6 +25,10 @@ func (m *MessengerService) CreateDirectChat(ctx context.Context, chat *entity.Di
 
 	chat.ChatID = chatModel.ChatID
 	chat.CreatedAt = chatModel.CreatedAt
+
+	if err := m.messengerCache.AddChatMembers(ctx, chat.ChatID.String(), chat.ParticipantIDs.Strings()); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -49,6 +53,10 @@ func (m *MessengerService) CreateGroupChat(ctx context.Context, chat *entity.Gro
 
 	chat.ChatID = chatModel.ChatID
 	chat.CreatedAt = chatModel.CreatedAt
+
+	if err := m.messengerCache.AddChatMembers(ctx, chat.ChatID.String(), chat.ParticipantIDs.Strings()); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -100,6 +108,10 @@ func (m *MessengerService) UpdateGroupChat(ctx context.Context, chat *entity.Upd
 	chat.Description = chatModel.Description
 	chat.CreatedAt = chatModel.CreatedAt
 	chat.OwnerID = chatModel.OwnerID
+
+	if err := m.messengerCache.ExpireChatID(ctx, chat.ChatID.String()); err != nil {
+		return err
+	}
 
 	return nil
 }

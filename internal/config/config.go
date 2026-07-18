@@ -100,6 +100,26 @@ type RedisConfig struct {
 	WriteTimeout time.Duration `yaml:"write_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
 }
 
+// RedisConfig represents chat config for Redis.
+type RedisChatConfig struct {
+	Ttl time.Duration `yaml:"ttl" env-default:"24h" validate:"gte=1h,lte=48h"`
+}
+
+// ChatConfig represents chat config.
+type ChatConfig struct {
+	Redis RedisChatConfig `yaml:"redis"`
+}
+
+// RedisPubSubConfig represents  config for Redis.
+type RedisPubSubConfig struct {
+	PubSubChannelCap int `yaml:"pub_sub_cap" validate:"gte=1"`
+}
+
+// DispatchingConfig represents pub/sub config.
+type DispatchConfig struct {
+	Redis RedisPubSubConfig `yaml:"redis"`
+}
+
 // Config represents dataclass with all configs.
 type Config struct {
 	Server   ServerConfig   `yaml:"server"`
@@ -108,6 +128,8 @@ type Config struct {
 	Postgres PostgresConfig `yaml:"postgres"`
 	Kafka    KafkaConfig    `yaml:"kafka"`
 	Redis    RedisConfig    `yaml:"redis"`
+	Chat     ChatConfig     `yaml:"chat"`
+	PubSub   DispatchConfig `yaml:"dispatching"`
 }
 
 // Load config from config/config.yaml.
