@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )

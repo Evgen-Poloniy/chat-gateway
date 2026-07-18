@@ -11,7 +11,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"

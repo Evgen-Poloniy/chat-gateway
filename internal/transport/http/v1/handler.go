@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
-	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/ws"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/ws"
 	"github.com/google/uuid"
 )
 

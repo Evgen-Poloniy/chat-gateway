@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 )

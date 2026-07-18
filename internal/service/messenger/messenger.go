@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )

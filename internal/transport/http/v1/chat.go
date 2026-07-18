@@ -7,7 +7,7 @@ import (
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"

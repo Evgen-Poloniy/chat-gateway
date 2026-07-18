@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 
 	"github.com/gin-gonic/gin"
 )

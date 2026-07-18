@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )

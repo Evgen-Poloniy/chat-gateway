@@ -7,7 +7,7 @@ import (
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/database"
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 

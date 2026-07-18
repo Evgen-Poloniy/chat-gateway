@@ -20,11 +20,9 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/service/resolver"
 	router "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http"
 	v1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/v1"
-	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/ws"
-
+	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/ws"
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/database"
-	logs "github.com/Evgen-Poloniy/chat-gateway/pkg/logger"
-
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/logs"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )

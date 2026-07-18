@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	errs "github.com/Evgen-Poloniy/chat-gateway/pkg/errors"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 )
 
 // AddChatMembers writes user_ids at cache by key chat_id.

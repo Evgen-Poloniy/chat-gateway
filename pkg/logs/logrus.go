@@ -1,4 +1,4 @@
-package logger
+package logs
 
 import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
