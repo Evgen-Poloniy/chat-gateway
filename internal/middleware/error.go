@@ -10,6 +10,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var httpStatusMap = map[errs.ErrCode]int{
+	errs.CodeUserNotFound:         http.StatusNotFound,
+	errs.CodeChatNotFound:         http.StatusNotFound,
+	errs.CodeUsersNotFound:        http.StatusNotFound,
+	errs.CodeUserHaveNotChats:     http.StatusNotFound,
+	errs.CodeUniqueViolation:      http.StatusConflict,
+	errs.CodeForeignKeyViolation:  http.StatusConflict,
+	errs.CodeUsernameIsRequired:   http.StatusBadRequest,
+	errs.CodeUserIdIsRequired:     http.StatusBadRequest,
+	errs.CodeChatIdIsRequired:     http.StatusBadRequest,
+	errs.CodeInvalidParameter:     http.StatusBadRequest,
+	errs.CodeValidationError:      http.StatusBadRequest,
+	errs.CodeEmptyUserIDs:         http.StatusBadRequest,
+	errs.CodeQueryError:           http.StatusInternalServerError,
+	errs.CodeTransactionError:     http.StatusInternalServerError,
+	errs.CodeSerializationError:   http.StatusInternalServerError,
+	errs.CodeDeserializationError: http.StatusInternalServerError,
+}
+
 func ErrorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if len(c.Errors) > 0 {
@@ -44,54 +63,20 @@ func ErrorHandler() gin.HandlerFunc {
 			code = httpError.Code
 			message = httpError.Message
 		} else if appError, ok := errors.AsType[*errs.AppError](err); ok {
-			switch appError.Code {
-			case errs.CodeUserNotFound:
-				statusCode = http.StatusNotFound
-				code = "user_not_found"
-
-			case errs.CodeChatNotFound:
-				statusCode = http.StatusNotFound
-				code = "chat_not_found"
-
-			case errs.CodeUniqueViolation:
-				statusCode = http.StatusConflict
-				code = "unique_violation"
-
-			case errs.CodeUsernameIsRequired:
-				statusCode = http.StatusBadRequest
-				code = "username_is_required"
-
-			case errs.CodeUserIdIsRequired:
-				statusCode = http.StatusBadRequest
-				code = "user_id_is_required"
-
-			case errs.CodeInvalidParameter:
-				statusCode = http.StatusBadRequest
-				code = "invalid_parameter"
-
-			case errs.CodeQueryError:
+			var ok bool
+			if statusCode, ok = httpStatusMap[appError.Code]; !ok {
 				statusCode = http.StatusInternalServerError
-				code = "database_query_error"
+			}
 
-			case errs.CodeTransactionError:
-				statusCode = http.StatusInternalServerError
-				code = "database_transaction_error"
-
-			case errs.CodeSerializationError, errs.CodeDeserializationError:
-				statusCode = http.StatusInternalServerError
-				code = "internal_server_error"
-
-			default:
-				statusCode = http.StatusInternalServerError
+			if code, ok = errs.MapToString[appError.Code]; !ok {
 				code = "unknown_error"
 			}
 
 			message = appError.Message
 		} else {
 			statusCode = http.StatusInternalServerError
-			code = "unknown error"
+			code = "unknown_error"
 			message = "unknown error"
-			c.Error(err)
 		}
 
 		c.Status(statusCode)

@@ -13,9 +13,8 @@ var wsCloseCodeMap = map[errs.ErrCode]int{
 	errs.CodeFailedEventChannel:   websocket.CloseInternalServerErr,
 	errs.CodeDeserializationError: websocket.CloseInternalServerErr,
 	errs.ErrCodeDeliveryFailed:    websocket.CloseInternalServerErr,
-
-	errs.CodeEmptyUserIDs:    websocket.ClosePolicyViolation,
-	errs.CodeValidationError: websocket.ClosePolicyViolation,
+	errs.CodeEmptyUserIDs:         websocket.ClosePolicyViolation,
+	errs.CodeValidationError:      websocket.ClosePolicyViolation,
 }
 
 type Handler struct {
