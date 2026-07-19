@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -135,7 +135,7 @@ func TestResolverService_ResolveEvent(t *testing.T) {
 				assert.Nil(t, result)
 
 				var appErr *errs.AppError
-				if errors.As(err, &appErr) && tt.expectedErrorCode != 0 {
+				if errors.As(err, &appErr) && tt.expectedErrorCode != "" {
 					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
 				}
 			} else {

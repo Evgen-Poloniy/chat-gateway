@@ -6,7 +6,7 @@ import (
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +16,11 @@ import (
 func (h *Handler) RegisterUser(c *gin.Context) {
 	var req dto.RegisterUserReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    err.Error(),
-			Err:        err,
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			err.Error(),
+			err,
+		))
 		return
 	}
 
@@ -56,34 +55,31 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 func (h *Handler) UpdateUser(c *gin.Context) {
 	userIdParam := c.Param("user_id")
 	if userIdParam == "" {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    errs.ErrUserIdIsRequired.Error(),
-			Err:        errs.ErrUserIdIsRequired,
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeUserIdIsRequired,
+			errs.ErrUserIdIsRequired.Error(),
+			errs.ErrUserIdIsRequired,
+		))
 		return
 	}
 
 	userID, err := uuid.Parse(userIdParam)
 	if err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    "failed to parse parameter 'user_id' as uuid",
-			Err:        fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			"failed to parse parameter 'user_id' as uuid",
+			fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
+		))
 		return
 	}
 
 	var req dto.UpdateUserReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    err.Error(),
-			Err:        err,
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			err.Error(),
+			err,
+		))
 		return
 	}
 
@@ -119,12 +115,11 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 func (h *Handler) SearchUser(c *gin.Context) {
 	username := c.Query("username")
 	if username == "" {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    errs.ErrUsernameIsRequired.Error(),
-			Err:        errs.ErrUsernameIsRequired,
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeUsernameIsRequired,
+			errs.ErrUsernameIsRequired.Error(),
+			errs.ErrUsernameIsRequired,
+		))
 		return
 	}
 
@@ -152,23 +147,21 @@ func (h *Handler) SearchUser(c *gin.Context) {
 func (h *Handler) GetUserDataByUserID(c *gin.Context) {
 	userIdParam := c.Param("user_id")
 	if userIdParam == "" {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    errs.ErrUserIdIsRequired.Error(),
-			Err:        errs.ErrUserIdIsRequired,
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeUserIdIsRequired,
+			errs.ErrUserIdIsRequired.Error(),
+			errs.ErrUserIdIsRequired,
+		))
 		return
 	}
 
 	userID, err := uuid.Parse(userIdParam)
 	if err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    "failed to parse parameter 'user_id' as uuid",
-			Err:        fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			"failed to parse parameter 'user_id' as uuid",
+			fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
+		))
 		return
 	}
 

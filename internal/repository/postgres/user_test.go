@@ -1,4 +1,4 @@
-package pg_test
+package postgres_test
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
+	postgres "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
@@ -76,7 +76,7 @@ func TestPostgresRepository_GetUserDataByUsername(t *testing.T) {
 			db, mock, cleanup := setupMockDB(t)
 			defer cleanup()
 
-			repo := pg.NewPostgresRepository(db)
+			repo := postgres.NewPostgresRepository(db)
 			tt.mock(mock)
 
 			user, err := repo.GetUserDataByUsername(context.Background(), tt.input)
@@ -158,7 +158,7 @@ func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 			db, mock, cleanup := setupMockDB(t)
 			defer cleanup()
 
-			repo := pg.NewPostgresRepository(db)
+			repo := postgres.NewPostgresRepository(db)
 			tt.mock(mock)
 
 			user, err := repo.GetUserDataByUserID(context.Background(), tt.input)
@@ -283,7 +283,7 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 			db, mock, cleanup := setupMockDB(t)
 			defer cleanup()
 
-			repo := pg.NewPostgresRepository(db)
+			repo := postgres.NewPostgresRepository(db)
 			tt.mock(mock, tt.input)
 
 			err := repo.CreateUser(context.Background(), tt.input)
@@ -366,7 +366,7 @@ func TestPostgresRepository_GetUserIDsByChatID(t *testing.T) {
 			db, mock, cleanup := setupMockDB(t)
 			defer cleanup()
 
-			repo := pg.NewPostgresRepository(db)
+			repo := postgres.NewPostgresRepository(db)
 			tt.mock(mock)
 
 			userIDs, err := repo.GetUserIDsByChatID(context.Background(), tt.chatID)
@@ -533,7 +533,7 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 			db, mock, cleanup := setupMockDB(t)
 			defer cleanup()
 
-			repo := pg.NewPostgresRepository(db)
+			repo := postgres.NewPostgresRepository(db)
 			tt.mock(mock, tt.input)
 
 			err := repo.UpdateUser(context.Background(), tt.input)

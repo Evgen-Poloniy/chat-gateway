@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,10 +23,18 @@ var httpStatusMap = map[errs.ErrCode]int{
 	errs.CodeInvalidParameter:     http.StatusBadRequest,
 	errs.CodeValidationError:      http.StatusBadRequest,
 	errs.CodeEmptyUserIDs:         http.StatusBadRequest,
+	errs.CodeBadRequest:           http.StatusBadRequest,
 	errs.CodeQueryError:           http.StatusInternalServerError,
 	errs.CodeTransactionError:     http.StatusInternalServerError,
 	errs.CodeSerializationError:   http.StatusInternalServerError,
 	errs.CodeDeserializationError: http.StatusInternalServerError,
+	errs.CodeRedisError:           http.StatusInternalServerError,
+	errs.CodeFailedToExpireKey:    http.StatusInternalServerError,
+	errs.CodeFailedEventChannel:   http.StatusInternalServerError,
+	errs.CodeDeliveryFailed:       http.StatusInternalServerError,
+	errs.CodeMissingAuthHeaders:   http.StatusUnauthorized,
+	errs.CodeWrongAuthHeader:      http.StatusUnauthorized,
+	errs.CodeInvalidAPIKey:        http.StatusUnauthorized,
 }
 
 func ErrorHandler() gin.HandlerFunc {
@@ -58,18 +66,12 @@ func ErrorHandler() gin.HandlerFunc {
 		err := c.Errors.Last().Err
 
 		// Error mapping
-		if httpError, ok := errors.AsType[*errs.HttpError](err); ok {
-			statusCode = httpError.StatusCode
-			code = httpError.Code
-			message = httpError.Message
-		} else if appError, ok := errors.AsType[*errs.AppError](err); ok {
+		if appError, ok := errors.AsType[*errs.AppError](err); ok {
+			code = string(appError.Code)
+
 			var ok bool
 			if statusCode, ok = httpStatusMap[appError.Code]; !ok {
 				statusCode = http.StatusInternalServerError
-			}
-
-			if code, ok = errs.MapToString[appError.Code]; !ok {
-				code = "unknown_error"
 			}
 
 			message = appError.Message

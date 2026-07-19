@@ -1,13 +1,13 @@
-package kf
+package kafka
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/database"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
+
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
@@ -26,7 +26,7 @@ func (k *KafkaRepository) SendMessage(ctx context.Context, message *model.SendMe
 			)
 		}
 
-		topic := database.MessageTopic
+		topic := "messenger-chat"
 
 		return k.producer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},

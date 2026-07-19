@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
-	kf "github.com/Evgen-Poloniy/chat-gateway/internal/repository/kafka"
+	kfk "github.com/Evgen-Poloniy/chat-gateway/internal/repository/kafka"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
 	rds "github.com/Evgen-Poloniy/chat-gateway/internal/repository/redis"
 	httpserver "github.com/Evgen-Poloniy/chat-gateway/internal/server/http"
@@ -21,10 +21,15 @@ import (
 	router "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http"
 	v1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/v1"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/ws"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/database"
+	kfkp "github.com/Evgen-Poloniy/chat-gateway/pkg/database/kafka"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/database/postgres"
+	"github.com/Evgen-Poloniy/chat-gateway/pkg/database/redis"
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/logs"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func Run() {
@@ -48,9 +53,24 @@ func Run() {
 		logrus.Fatalf("error when loading config: %v", err)
 	}
 
-	logger := logs.NewLogrusLogger(&config.Logger)
+	logger := logs.NewLogrusLogger(logs.WithLevel(config.Logger.Level), logs.WithFormat(config.Logger.Format))
 
-	db, err := database.NewPostgreSQL(&config.Postgres)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		config.Postgres.Host,
+		config.Postgres.Port,
+		config.Postgres.Username,
+		config.Postgres.Password,
+		config.Postgres.DBName,
+		config.Postgres.SSLMode,
+	)
+
+	db, err := postgres.NewPostgreSQL(
+		dsn,
+		postgres.WithMaxOpenConns(config.Postgres.MaxOpenConns),
+		postgres.WithMaxIdleConns(config.Postgres.MaxIdleConns),
+		postgres.WithConnMaxLifetime(config.Postgres.ConnMaxLifetime),
+		postgres.WithConnMaxIdleLifetime(config.Postgres.ConnMaxIdleLifetime),
+	)
 	if err != nil {
 		logger.Errorf("database error: %v", err)
 	}
@@ -60,7 +80,21 @@ func Run() {
 		}
 	}()
 
-	producer, err := database.NewKafkaProducer(&config.Kafka, logger)
+	configMap := kafka.ConfigMap{
+		"bootstrap.servers":                     config.Kafka.BootstrapServers,
+		"acks":                                  config.Kafka.Acks,
+		"enable.idempotence":                    config.Kafka.EnableIdempotence,
+		"retries":                               config.Kafka.Retries,
+		"max.in.flight.requests.per.connection": config.Kafka.MaxInFlightRequestsPerConn,
+		"linger.ms":                             config.Kafka.LingerMs,
+		"batch.num.messages":                    config.Kafka.BatchNumMessages,
+		"compression.type":                      config.Kafka.CompressionType,
+		"queue.buffering.max.messages":          config.Kafka.QueueBufferingMaxMessages,
+		"message.timeout.ms":                    config.Kafka.MessageTimeout,
+		"num.partitions":                        config.Kafka.NumPartitions,
+	}
+
+	producer, err := kfkp.NewKafkaProducer(&configMap)
 	if err != nil {
 		logger.Errorf("message broker error: %v", err)
 	}
@@ -72,8 +106,34 @@ func Run() {
 
 		producer.Close()
 	}()
+	go func() {
+		for e := range producer.Events() {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					logger.WithFields(map[string]interface{}{
+						"topic":     ev.TopicPartition.Topic,
+						"partition": ev.TopicPartition.Partition,
+						"code":      "kafka_error",
+					}).Error(fmt.Sprintf("kafka delivery error: %v", ev.TopicPartition.Error))
+				} else {
+					logger.WithFields(map[string]interface{}{
+						"topic":     ev.TopicPartition.Topic,
+						"partition": ev.TopicPartition.Partition,
+						"offset":    ev.TopicPartition.Offset,
+					}).Info("kafka message delivered")
+				}
+			}
+		}
+	}()
 
-	rdb, err := database.NewRedisClient(&config.Redis)
+	rdb, err := redis.NewRedisCache(
+		redis.WithAddr(config.Redis.Host, config.Redis.Port),
+		redis.WithPassword(config.Redis.Password),
+		redis.WithDialTimeout(config.Redis.DialTimeout),
+		redis.WithReadTimeout(config.Redis.ReadTimeout),
+		redis.WithWriteTimeout(config.Redis.WriteTimeout),
+	)
 	if err != nil {
 		logger.Fatalf("error: %v", err)
 	}
@@ -87,7 +147,7 @@ func Run() {
 	}()
 
 	messengerRepository := pg.NewPostgresRepository(db)
-	messageBroker := kf.NewKafkaRepository(producer)
+	messageBroker := kfk.NewKafkaRepository(producer)
 
 	cache := rds.NewRedisCache(rdb, &config.Redis, &config.Resolver)
 

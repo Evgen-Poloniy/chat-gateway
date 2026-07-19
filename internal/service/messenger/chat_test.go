@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	mock_repository "github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger/mocks"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

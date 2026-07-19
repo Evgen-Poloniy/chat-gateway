@@ -1,4 +1,4 @@
-package pg_test
+package postgres_test
 
 import (
 	"errors"

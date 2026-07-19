@@ -7,7 +7,7 @@ import (
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
@@ -17,11 +17,11 @@ import (
 func (h *Handler) CreateDirectChat(c *gin.Context) {
 	var req dto.CreateDirectChatReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    err.Error(),
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			err.Error(),
+			err,
+		))
 		return
 	}
 
@@ -46,11 +46,11 @@ func (h *Handler) CreateDirectChat(c *gin.Context) {
 func (h *Handler) CreateGroupChat(c *gin.Context) {
 	var req dto.CreateGroupChatReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    err.Error(),
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			err.Error(),
+			err,
+		))
 		return
 	}
 
@@ -83,23 +83,21 @@ func (h *Handler) CreateGroupChat(c *gin.Context) {
 func (h *Handler) GetChatsByUserID(c *gin.Context) {
 	userIdParam := c.Param("user_id")
 	if userIdParam == "" {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    errs.ErrUserIdIsRequired.Error(),
-			Err:        errs.ErrUserIdIsRequired,
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeUserIdIsRequired,
+			errs.ErrUserIdIsRequired.Error(),
+			errs.ErrUserIdIsRequired,
+		))
 		return
 	}
 
 	userID, err := uuid.Parse(userIdParam)
 	if err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    "failed to parse parameter 'user_id' as uuid",
-			Err:        fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			"failed to parse parameter 'user_id' as uuid",
+			fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
+		))
 		return
 	}
 
@@ -111,22 +109,20 @@ func (h *Handler) GetChatsByUserID(c *gin.Context) {
 		var err error
 		page, err = strconv.Atoi(pageQuery)
 		if err != nil {
-			c.Error(&errs.HttpError{
-				StatusCode: http.StatusBadRequest,
-				Code:       "bad_request",
-				Message:    "failed to convert query parameter 'page' to positive int",
-				Err:        fmt.Errorf("failed to convert query parameter 'page' to int: %v", err),
-			})
+			c.Error(errs.NewAppError(
+				errs.CodeBadRequest,
+				"failed to convert query parameter 'page' to positive int",
+				fmt.Errorf("failed to convert query parameter 'page' to int: %v", err),
+			))
 			return
 		}
 
 		if page < 1 {
-			c.Error(&errs.HttpError{
-				StatusCode: http.StatusBadRequest,
-				Code:       "bad_request",
-				Message:    errs.ErrPageRequiredBeGreater.Error(),
-				Err:        errs.ErrPageRequiredBeGreater,
-			})
+			c.Error(errs.NewAppError(
+				errs.CodeBadRequest,
+				errs.ErrPageRequiredBeGreater.Error(),
+				errs.ErrPageRequiredBeGreater,
+			))
 			return
 		}
 	}
@@ -139,32 +135,29 @@ func (h *Handler) GetChatsByUserID(c *gin.Context) {
 		var err error
 		limit, err = strconv.Atoi(limitQuery)
 		if err != nil {
-			c.Error(&errs.HttpError{
-				StatusCode: http.StatusBadRequest,
-				Code:       "bad_request",
-				Message:    "failed to convert query parameter 'limit' to positive int",
-				Err:        fmt.Errorf("failed to convert query parameter 'limit' to int: %v", err),
-			})
+			c.Error(errs.NewAppError(
+				errs.CodeBadRequest,
+				"failed to convert query parameter 'limit' to positive int",
+				fmt.Errorf("failed to convert query parameter 'limit' to int: %v", err),
+			))
 			return
 		}
 
 		if limit < 1 {
-			c.Error(&errs.HttpError{
-				StatusCode: http.StatusBadRequest,
-				Code:       "bad_request",
-				Message:    errs.ErrLimitRequiredBeGreater.Error(),
-				Err:        errs.ErrLimitRequiredBeGreater,
-			})
+			c.Error(errs.NewAppError(
+				errs.CodeBadRequest,
+				errs.ErrLimitRequiredBeGreater.Error(),
+				errs.ErrLimitRequiredBeGreater,
+			))
 			return
 		}
 
 		if limit > 100 {
-			c.Error(&errs.HttpError{
-				StatusCode: http.StatusBadRequest,
-				Code:       "bad_request",
-				Message:    errs.ErrLimitRequiredBeLess.Error(),
-				Err:        errs.ErrLimitRequiredBeLess,
-			})
+			c.Error(errs.NewAppError(
+				errs.CodeBadRequest,
+				errs.ErrLimitRequiredBeLess.Error(),
+				errs.ErrLimitRequiredBeLess,
+			))
 			return
 		}
 	}
@@ -193,34 +186,31 @@ func (h *Handler) GetChatsByUserID(c *gin.Context) {
 func (h *Handler) UpdateGroupChat(c *gin.Context) {
 	chatIdParam := c.Param("chat_id")
 	if chatIdParam == "" {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    errs.ErrChatIdIsRequired.Error(),
-			Err:        errs.ErrChatIdIsRequired,
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeChatIdIsRequired,
+			errs.ErrChatIdIsRequired.Error(),
+			errs.ErrChatIdIsRequired,
+		))
 		return
 	}
 
 	chatID, err := uuid.Parse(chatIdParam)
 	if err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    "failed to parse parameter 'chat_id' as uuid",
-			Err:        fmt.Errorf("failed to parse parameter 'chat_id' as uuid: %v", err),
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			"failed to parse parameter 'chat_id' as uuid",
+			fmt.Errorf("failed to parse parameter 'chat_id' as uuid: %v", err),
+		))
 		return
 	}
 
 	var req dto.UpdateGroupChatReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    err.Error(),
-			Err:        err,
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			err.Error(),
+			err,
+		))
 		return
 	}
 
@@ -254,33 +244,31 @@ func (h *Handler) UpdateGroupChat(c *gin.Context) {
 func (h *Handler) SendMessage(c *gin.Context) {
 	chatIdParam := c.Param("chat_id")
 	if chatIdParam == "" {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    errs.ErrChatIdIsRequired.Error(),
-			Err:        errs.ErrChatIdIsRequired,
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeChatIdIsRequired,
+			errs.ErrChatIdIsRequired.Error(),
+			errs.ErrChatIdIsRequired,
+		))
 		return
 	}
 
 	chatID, err := uuid.Parse(chatIdParam)
 	if err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    "failed to parse parameter 'chat_id' as uuid",
-			Err:        fmt.Errorf("failed to parse parameter 'chat_id' as uuid: %v", err),
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			"failed to parse parameter 'chat_id' as uuid",
+			fmt.Errorf("failed to parse parameter 'chat_id' as uuid: %v", err),
+		))
 		return
 	}
 
 	var req dto.SendMessageReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(&errs.HttpError{
-			StatusCode: http.StatusBadRequest,
-			Code:       "bad_request",
-			Message:    err.Error(),
-		})
+		c.Error(errs.NewAppError(
+			errs.CodeBadRequest,
+			err.Error(),
+			err,
+		))
 		return
 	}
 

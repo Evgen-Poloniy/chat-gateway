@@ -1,9 +1,9 @@
 package messenger_test
 
 import (
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger"
 	mock_repository "github.com/Evgen-Poloniy/chat-gateway/internal/service/messenger/mocks"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 
 	"go.uber.org/mock/gomock"
 )

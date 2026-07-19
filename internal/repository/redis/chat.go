@@ -1,10 +1,10 @@
-package rds
+package redis
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 )
 
 // AddChatMembers writes user_ids at cache by key chat_id.

@@ -62,10 +62,10 @@ type PostgresConfig struct {
 	Password            string        `env:"DB_PASSWORD" env-required:"true"`
 	DBName              string        `env:"DB_NAME" env-required:"true"`
 	SSLMode             string        `env:"SSL_MODE" env-required:"true" validate:"oneof=disable require"`
-	MaxOpenConns        int           `yaml:"max_open_conns"`
-	MaxIdleConns        int           `yaml:"max_idle_conns"`
-	ConnMaxLifetime     time.Duration `yaml:"conn_max_lifetime"`
-	ConnMaxIdleLifetime time.Duration `yaml:"conn_max_idle_lifetime"`
+	MaxOpenConns        int           `yaml:"max_open_conns" env-default:"25"`
+	MaxIdleConns        int           `yaml:"max_idle_conns" env-default:"25"`
+	ConnMaxLifetime     time.Duration `yaml:"conn_max_lifetime" env-default:"5m"`
+	ConnMaxIdleLifetime time.Duration `yaml:"conn_max_idle_lifetime" env-default:"2m"`
 }
 
 // KafkaConfig represents broker config from env and config.yaml.
@@ -93,10 +93,10 @@ type RedisConfig struct {
 	Host         string        `env:"REDIS_HOST" env-required:"true"`
 	Port         string        `env:"REDIS_PORT" env-required:"true"`
 	Password     string        `env:"REDIS_PASSWORD" env-required:"true"`
-	DialTimeout  time.Duration `yaml:"dial_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
-	ReadTimeout  time.Duration `yaml:"read_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
-	WriteTimeout time.Duration `yaml:"write_timeout" env-default:"1s" validate:"gte=10ms,lte=5s"`
-	ChatTtl      time.Duration `yaml:"chat_ttl" env-default:"24h" validate:"gte=1h,lte=48h"`
+	DialTimeout  time.Duration `yaml:"dial_timeout" env-default:"1s"`
+	ReadTimeout  time.Duration `yaml:"read_timeout" env-default:"1s"`
+	WriteTimeout time.Duration `yaml:"write_timeout" env-default:"1s"`
+	ChatTtl      time.Duration `yaml:"chat_ttl" env-default:"24h"`
 }
 
 // ResolverConfig represents pub/sub config.

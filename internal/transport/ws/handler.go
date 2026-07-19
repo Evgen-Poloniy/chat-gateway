@@ -2,9 +2,8 @@ package ws
 
 import (
 	"errors"
-	"fmt"
 
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
@@ -12,7 +11,7 @@ import (
 var wsCloseCodeMap = map[errs.ErrCode]int{
 	errs.CodeFailedEventChannel:   websocket.CloseInternalServerErr,
 	errs.CodeDeserializationError: websocket.CloseInternalServerErr,
-	errs.ErrCodeDeliveryFailed:    websocket.CloseInternalServerErr,
+	errs.CodeDeliveryFailed:       websocket.CloseInternalServerErr,
 	errs.CodeEmptyUserIDs:         websocket.ClosePolicyViolation,
 	errs.CodeValidationError:      websocket.ClosePolicyViolation,
 }
@@ -50,11 +49,7 @@ func logError(logger *logrus.Logger, id string, serverAddress string, err error)
 	closeCode := websocket.CloseInternalServerErr
 
 	if appErr, ok := errors.AsType[*errs.AppError](err); ok {
-		if str, exists := errs.MapToString[appErr.Code]; exists {
-			code = str
-		} else {
-			code = fmt.Sprintf("close_code_%d", appErr.Code)
-		}
+		code = string(appErr.Code)
 
 		if wsCloseCode, exists := wsCloseCodeMap[appErr.Code]; exists {
 			closeCode = wsCloseCode

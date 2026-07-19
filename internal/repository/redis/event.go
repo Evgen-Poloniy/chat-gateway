@@ -1,12 +1,12 @@
-package rds
+package redis
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
 )
 
 // SubscribeOnEventChannel subscribes on broker channel once fro all time of work application.

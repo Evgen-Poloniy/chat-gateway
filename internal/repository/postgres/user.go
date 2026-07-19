@@ -1,4 +1,4 @@
-package pg
+package postgres
 
 import (
 	"context"
@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 

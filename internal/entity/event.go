@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Evgen-Poloniy/chat-gateway/pkg/errs"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/google/uuid"
 )
 
