@@ -31,6 +31,15 @@ func (s *ResolverService) ResolveEvent(ctx context.Context) (*entity.EventMessag
 		return nil, err
 	}
 
+	// exception sender user_id from user ids without saving order
+	for i, userID := range userIDs {
+		if userID == event.SenderID {
+			userIDs[i] = userIDs[len(userIDs)-1]
+			userIDs = userIDs[:len(userIDs)-1]
+			break
+		}
+	}
+
 	if err := s.cache.ExpireChatID(ctx, event.ChatID); err != nil {
 		return nil, err
 	}
