@@ -22,9 +22,9 @@ func TestResolverService_SubscribeOnEventChannel(t *testing.T) {
 	svc, mockChannel, _ := setupMockService(ctrl)
 	ctx := context.Background()
 
-	mockChannel.EXPECT().SubscribeOnEventChannel(ctx).Times(1)
+	mockChannel.EXPECT().SubscribeToEventChannel(ctx).Times(1)
 
-	svc.SubscribeOnEventChannel(ctx)
+	svc.SubscribeToEvents(ctx)
 }
 
 func TestResolverService_ResolveEvent(t *testing.T) {

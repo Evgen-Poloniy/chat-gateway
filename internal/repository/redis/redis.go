@@ -11,7 +11,7 @@ type RedisCache struct {
 	rdb            *redis.Client
 	chatConf       *config.RedisConfig
 	resolverConfig *config.ResolverConfig
-	eventChan      chan model.Event
+	events         chan model.Event
 }
 
 func NewRedisCache(rdb *redis.Client, chatConf *config.RedisConfig, resolverConfig *config.ResolverConfig) *RedisCache {
@@ -19,5 +19,6 @@ func NewRedisCache(rdb *redis.Client, chatConf *config.RedisConfig, resolverConf
 		rdb:            rdb,
 		chatConf:       chatConf,
 		resolverConfig: resolverConfig,
+		events:         make(chan model.Event, resolverConfig.EventChannelCap),
 	}
 }

@@ -6,9 +6,9 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 )
 
-// SubscribeOnEventChannel subscribes on broker channel once fro all time of work application.
-func (s *ResolverService) SubscribeOnEventChannel(ctx context.Context) {
-	s.channel.SubscribeOnEventChannel(ctx)
+// SubscribeToEvents subscribes on broker channel once fro all time of work application.
+func (s *ResolverService) SubscribeToEvents(ctx context.Context) error {
+	return s.channel.SubscribeToEventChannel(ctx)
 }
 
 // ResolveEvent returns event from channel.

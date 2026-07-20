@@ -19,14 +19,12 @@ import (
 
 // ResolverService represents interface for work with user ids resolve
 type ResolverService interface {
-	// SubscribeOnEventChannel subscribes on broker channel once fro all time of work application.
-	SubscribeOnEventChannel(ctx context.Context)
+	// SubscribeToEvents subscribes on broker channel once fro all time of work application.
+	SubscribeToEvents(ctx context.Context) error
 
 	// ResolveEvent returns event from channel.
 	ResolveEvent(ctx context.Context) (*entity.EventMessage, error)
 }
-
-var _serverAddress string
 
 // wsHub manages WebSocket connections
 type Hub struct {
@@ -40,6 +38,7 @@ type Hub struct {
 
 	ctx    context.Context
 	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
 func NewHub(
@@ -103,8 +102,26 @@ func (h *Hub) unregister(client *Client) error {
 	return nil
 }
 
-func (h *Hub) StartDispatchMessage() {
-	h.resolver.SubscribeOnEventChannel(h.ctx)
+// StartDispatchMessage starts dispatch message by using workers pull.
+func (h *Hub) StartDispatchMessage() error {
+	if err := h.resolver.SubscribeToEvents(h.ctx); err != nil {
+		return err
+	}
+
+	h.wg.Add(h.dispatchConf.NumWorkers)
+
+	for i := 0; i < h.dispatchConf.NumWorkers; i++ {
+		go func(idx int) {
+			h.worker(h.ctx, idx)
+		}(i)
+	}
+
+	return nil
+}
+
+// worker resolves event data and broadcasts message to users.
+func (h *Hub) worker(ctx context.Context, idx int) {
+	defer h.wg.Done()
 
 	for {
 		event, err := h.resolver.ResolveEvent(h.ctx)
@@ -113,7 +130,7 @@ func (h *Hub) StartDispatchMessage() {
 				return
 			}
 
-			logError(h.logger, uuid.NewString(), h.serverAddress, err)
+			logError(h.logger, h.serverAddress, err)
 
 			if appErr, exists := errors.AsType[*errs.AppError](err); exists {
 				if appErr.Code == errs.CodeFailedEventChannel {
@@ -154,15 +171,13 @@ func (h *Hub) broadcastMessage(userIDs uuid.UUIDs, message dto.DispatchMessage) 
 		select {
 		case client.send <- message:
 		default:
-			id := uuid.NewString()
-
-			logWarn(h.logger, id,
+			logWarn(h.logger,
 				h.serverAddress,
 				fmt.Sprintf("the client with user_id '%s' has been disconnected because of bad network", client.userID.String()),
 			)
 
 			if err := client.conn.Close(); err != nil {
-				logError(h.logger, id, h.serverAddress, err)
+				logError(h.logger, h.serverAddress, err)
 			}
 		}
 	}
@@ -180,7 +195,7 @@ func (h *Hub) writeMessage(client *Client) {
 			}
 
 			if err := client.conn.WriteJSON(message); err != nil {
-				logError(h.logger, uuid.NewString(), h.serverAddress, fmt.Errorf("websocket error: %v", err))
+				logError(h.logger, h.serverAddress, fmt.Errorf("websocket error: %v", err))
 				return
 			}
 		}
@@ -257,10 +272,26 @@ func (h *Hub) readMessage(client *Client) {
 			continue
 		}
 
-		logInfo(h.logger, uuid.NewString(), h.serverAddress, string(payload))
+		logInfo(h.logger, h.serverAddress, string(payload))
 	}
 }
 
-func (h *Hub) ShutdownDispatchMessage(ctx context.Context) {
-	h.cancel()
+// ShutdownDispatchMessage stops dispatch workers.
+func (h *Hub) ShutdownDispatchMessage(ctx context.Context) error {
+	if h.cancel != nil {
+		h.cancel()
+	}
+
+	done := make(chan struct{})
+	go func() {
+		h.wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }

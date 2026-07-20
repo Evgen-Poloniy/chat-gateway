@@ -107,6 +107,7 @@ type ResolverConfig struct {
 // DispatchConfig represents dispatch config.
 type DispatchConfig struct {
 	SendChannelCap int `yaml:"send_cap" validate:"gte=1"`
+	NumWorkers     int `yaml:"num_workers" validate:"gte=1"`
 }
 
 // Config represents dataclass with all configs.

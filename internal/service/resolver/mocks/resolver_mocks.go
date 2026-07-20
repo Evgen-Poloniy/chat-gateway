@@ -56,16 +56,18 @@ func (mr *MockChannelMockRecorder) ResolveEvent(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveEvent", reflect.TypeOf((*MockChannel)(nil).ResolveEvent), ctx)
 }
 
-// SubscribeOnEventChannel mocks base method.
-func (m *MockChannel) SubscribeOnEventChannel(ctx context.Context) {
+// SubscribeToEventChannel mocks base method.
+func (m *MockChannel) SubscribeToEventChannel(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SubscribeOnEventChannel", ctx)
+	ret := m.ctrl.Call(m, "SubscribeToEventChannel", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// SubscribeOnEventChannel indicates an expected call of SubscribeOnEventChannel.
-func (mr *MockChannelMockRecorder) SubscribeOnEventChannel(ctx any) *gomock.Call {
+// SubscribeToEventChannel indicates an expected call of SubscribeToEventChannel.
+func (mr *MockChannelMockRecorder) SubscribeToEventChannel(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeOnEventChannel", reflect.TypeOf((*MockChannel)(nil).SubscribeOnEventChannel), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToEventChannel", reflect.TypeOf((*MockChannel)(nil).SubscribeToEventChannel), ctx)
 }
 
 // MockCache is a mock of Cache interface.

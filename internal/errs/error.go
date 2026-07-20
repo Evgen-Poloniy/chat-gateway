@@ -55,7 +55,7 @@ func NewAppError(code ErrCode, message string, err error) *AppError {
 
 // Repository errors.
 var (
-	ErrFailedEventChannel = errors.New("redis pubsub channel closed unexpectedly")
+	ErrFailedEventChannel = errors.New("channel closed unexpectedly")
 )
 
 // Validation errors.

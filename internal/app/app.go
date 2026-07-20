@@ -162,6 +162,11 @@ func Run() {
 	v1.NewRouter(router, v1Handler, apiKeyHash)
 	ws.NewRouter(router, wsHandler)
 
+	logger.Info("starting dispatch messages")
+	if err := wsHub.StartDispatchMessage(); err != nil {
+		logger.Fatalf("start dispatch error: %v", err)
+	}
+
 	httpServer := httpserver.NewServer(&config.Server, router)
 
 	var wg sync.WaitGroup
@@ -176,14 +181,6 @@ func Run() {
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		logger.Info("starting dispatch messages worker")
-		wsHub.StartDispatchMessage()
-	}()
-
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
@@ -195,8 +192,10 @@ func Run() {
 	)
 	defer cancel()
 
-	logger.Info("shutting down dispatch messages worker")
-	wsHub.ShutdownDispatchMessage(ctx)
+	logger.Info("shutting down dispatch messages workers")
+	if err := wsHub.ShutdownDispatchMessage(ctx); err != nil {
+		logger.Errorf("dispatch messages workers forced to shutdown: %v", err)
+	}
 
 	logger.Info("shutting down server")
 	if err := httpServer.Shutdown(ctx); err != nil {

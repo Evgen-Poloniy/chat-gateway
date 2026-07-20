@@ -3,21 +3,28 @@ package redis
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 )
 
-// SubscribeOnEventChannel subscribes on broker channel once fro all time of work application.
-func (r *RedisCache) SubscribeOnEventChannel(ctx context.Context) {
-	r.eventChan = make(chan model.Event, r.chatConf.ChatTtl)
+// SubscribeToEventChannel subscribes on broker channel once fro all time of work application.
+func (r *RedisCache) SubscribeToEventChannel(ctx context.Context) error {
 	pubsub := r.rdb.Subscribe(ctx, "events:users:dispatch")
+
+	if _, err := pubsub.Receive(ctx); err != nil {
+		if errClose := pubsub.Close(); errClose != nil {
+			return errors.Join(err, errClose)
+		}
+		return err
+	}
 
 	go func() {
 		defer func() {
-			pubsub.Close()
-			close(r.eventChan)
+			_ = pubsub.Close()
+			close(r.events)
 		}()
 
 		ch := pubsub.Channel()
@@ -29,7 +36,7 @@ func (r *RedisCache) SubscribeOnEventChannel(ctx context.Context) {
 				if !ok {
 					select {
 					case <-ctx.Done():
-					case r.eventChan <- model.Event{
+					case r.events <- model.Event{
 						Err: errs.NewAppError(
 							errs.CodeFailedEventChannel,
 							errs.ErrFailedEventChannel.Error(),
@@ -45,7 +52,7 @@ func (r *RedisCache) SubscribeOnEventChannel(ctx context.Context) {
 					select {
 					case <-ctx.Done():
 						return
-					case r.eventChan <- model.Event{
+					case r.events <- model.Event{
 						Err: errs.NewAppError(
 							errs.CodeDeserializationError,
 							"failed to unmarshal redis pubsub message",
@@ -59,13 +66,15 @@ func (r *RedisCache) SubscribeOnEventChannel(ctx context.Context) {
 				select {
 				case <-ctx.Done():
 					return
-				case r.eventChan <- model.Event{
+				case r.events <- model.Event{
 					Data: msg,
 				}:
 				}
 			}
 		}
 	}()
+
+	return nil
 }
 
 // ResolveEvent returns event from channel.
@@ -73,7 +82,7 @@ func (r *RedisCache) ResolveEvent(ctx context.Context) (*model.EventMessage, err
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	case ev, ok := <-r.eventChan:
+	case ev, ok := <-r.events:
 		if !ok {
 			return nil, errs.NewAppError(
 				errs.CodeFailedEventChannel,

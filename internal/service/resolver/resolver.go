@@ -10,8 +10,8 @@ import (
 
 // Channel represents interface for work with broker channel.
 type Channel interface {
-	// SubscribeOnEventChannel subscribes on broker channel once fro all time of work application.
-	SubscribeOnEventChannel(ctx context.Context)
+	// SubscribeToEventChannel subscribes on broker channel once fro all time of work application.
+	SubscribeToEventChannel(ctx context.Context) error
 
 	// ResolveEvent returns event from channel.
 	ResolveEvent(ctx context.Context) (*model.EventMessage, error)

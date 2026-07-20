@@ -28,23 +28,21 @@ func NewHandler(wsHub *Hub, logger *logrus.Logger) *Handler {
 	}
 }
 
-func logInfo(logger *logrus.Logger, id string, serverAddress string, message string) {
+func logInfo(logger *logrus.Logger, serverAddress string, message string) {
 	entry := logger.WithFields(map[string]interface{}{
-		"id":      id,
 		"address": serverAddress,
 	})
 	entry.Info(message)
 }
 
-func logWarn(logger *logrus.Logger, id string, serverAddress string, message string) {
+func logWarn(logger *logrus.Logger, serverAddress string, message string) {
 	entry := logger.WithFields(map[string]interface{}{
-		"id":      id,
-		"address": _serverAddress,
+		"address": serverAddress,
 	})
 	entry.Warn(message)
 }
 
-func logError(logger *logrus.Logger, id string, serverAddress string, err error) {
+func logError(logger *logrus.Logger, serverAddress string, err error) {
 	code := "unknown_internal_error"
 	closeCode := websocket.CloseInternalServerErr
 
@@ -57,7 +55,6 @@ func logError(logger *logrus.Logger, id string, serverAddress string, err error)
 	}
 
 	logger.WithFields(map[string]interface{}{
-		"id":         id,
 		"address":    serverAddress,
 		"code":       code,
 		"close_code": closeCode,
