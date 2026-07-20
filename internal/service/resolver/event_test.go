@@ -117,6 +117,29 @@ func TestResolverService_ResolveEvent(t *testing.T) {
 			wantErr:           true,
 			expectedErrorCode: errs.CodeEmptyUserIDs,
 		},
+		{
+			name: "Success - SenderID not in chat members list",
+			mock: func(mockChannel *mock_repository.MockChannel, mockCache *mock_repository.MockCache) {
+				mockChannel.EXPECT().
+					ResolveEvent(gomock.Any()).
+					Return(&model.EventMessage{
+						MessageID: "msg-123",
+						ChatID:    "chat-123",
+						SenderID:  "sender-not-in-list",
+						Text:      "hello",
+						CreatedAt: time.Now(),
+					}, nil)
+
+				mockCache.EXPECT().
+					GetChatMembers(gomock.Any(), "chat-123").
+					Return([]string{validUUID, "another-user-id"}, nil)
+
+				mockCache.EXPECT().
+					ExpireChatID(gomock.Any(), "chat-123").
+					Return(nil)
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
