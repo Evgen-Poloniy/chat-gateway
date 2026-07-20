@@ -2,8 +2,10 @@ package messenger
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	"github.com/google/uuid"
 )
@@ -67,6 +69,13 @@ func (m *MessengerService) GetChatsByUserID(ctx context.Context, userID uuid.UUI
 	if err != nil {
 		return nil, err
 	}
+	if len(chatModels) == 0 {
+		return nil, errs.NewAppError(
+			errs.CodeChatNotFound,
+			fmt.Sprintf("records about user chats with user_id '%s' not found", userID),
+			fmt.Errorf("records about user chats with user_id '%s' not found", userID),
+		)
+	}
 
 	chats := make([]entity.Chat, 0, len(chatModels))
 
@@ -92,11 +101,34 @@ func (m *MessengerService) UpdateGroupChat(ctx context.Context, chat *entity.Upd
 	}
 
 	chatModel := model.UpdateGroupChat{
-		ChatID:      chat.ChatID,
-		Name:        chat.Name,
-		Title:       chat.Title,
-		Description: chat.Description,
-		OwnerID:     chat.OwnerID,
+		ChatID:        chat.ChatID,
+		UserIDUpdater: chat.UserIDUpdater,
+		Name:          chat.Name,
+		Title:         chat.Title,
+		Description:   chat.Description,
+		OwnerID:       chat.OwnerID,
+	}
+
+	isInCache, err := m.messengerCache.IsUserInChat(ctx, chatModel.ChatID.String(), chatModel.UserIDUpdater.String())
+	if err != nil {
+		return err
+	}
+	if !isInCache {
+		isInDatabase, err := m.messengerRepository.IsUserInChat(ctx, chatModel.ChatID, chatModel.UserIDUpdater)
+		if err != nil {
+			return err
+		}
+		if !isInDatabase {
+			return errs.NewAppError(
+				errs.CodeUserIsNotInChat,
+				errs.ErrUserIsNotInChat.Error(),
+				errs.ErrUserIsNotInChat,
+			)
+		}
+
+		if err := m.messengerCache.AddChatMembers(ctx, chatModel.ChatID.String(), []string{chatModel.UserIDUpdater.String()}); err != nil {
+			return err
+		}
 	}
 
 	if err := m.messengerRepository.UpdateGroupChat(ctx, &chatModel); err != nil {
@@ -126,6 +158,28 @@ func (m *MessengerService) SendMessage(ctx context.Context, message *entity.Send
 		ChatID:   message.ChatID,
 		SenderID: message.SenderID,
 		Message:  message.Message,
+	}
+
+	isInCache, err := m.messengerCache.IsUserInChat(ctx, messageModel.ChatID.String(), messageModel.SenderID.String())
+	if err != nil {
+		return err
+	}
+	if !isInCache {
+		isInDatabase, err := m.messengerRepository.IsUserInChat(ctx, messageModel.ChatID, messageModel.SenderID)
+		if err != nil {
+			return err
+		}
+		if !isInDatabase {
+			return errs.NewAppError(
+				errs.CodeUserIsNotInChat,
+				errs.ErrUserIsNotInChat.Error(),
+				errs.ErrUserIsNotInChat,
+			)
+		}
+
+		if err := m.messengerCache.AddChatMembers(ctx, messageModel.ChatID.String(), []string{messageModel.SenderID.String()}); err != nil {
+			return err
+		}
 	}
 
 	return m.messageBroker.SendMessage(ctx, &messageModel)

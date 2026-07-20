@@ -10,6 +10,7 @@ import (
 
 var (
 	errRepoQueryError = errs.NewAppError(errs.CodeQueryError, "query error", nil)
+	errCacheFailed    = errs.NewAppError(errs.CodeRedisError, "redis error", nil)
 )
 
 func ptr[T any](v T) *T {

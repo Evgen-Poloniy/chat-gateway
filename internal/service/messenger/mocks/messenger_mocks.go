@@ -144,6 +144,21 @@ func (mr *MockMessengerRepositoryMockRecorder) GetUserIDsByChatID(ctx, chatID an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserIDsByChatID", reflect.TypeOf((*MockMessengerRepository)(nil).GetUserIDsByChatID), ctx, chatID)
 }
 
+// IsUserInChat mocks base method.
+func (m *MockMessengerRepository) IsUserInChat(ctx context.Context, chatID, userID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsUserInChat", ctx, chatID, userID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsUserInChat indicates an expected call of IsUserInChat.
+func (mr *MockMessengerRepositoryMockRecorder) IsUserInChat(ctx, chatID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUserInChat", reflect.TypeOf((*MockMessengerRepository)(nil).IsUserInChat), ctx, chatID, userID)
+}
+
 // UpdateGroupChat mocks base method.
 func (m *MockMessengerRepository) UpdateGroupChat(ctx context.Context, chat *model.UpdateGroupChat) error {
 	m.ctrl.T.Helper()
@@ -275,6 +290,21 @@ func (m *MockMessengerCache) GetChatMembers(ctx context.Context, chatID string) 
 func (mr *MockMessengerCacheMockRecorder) GetChatMembers(ctx, chatID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatMembers", reflect.TypeOf((*MockMessengerCache)(nil).GetChatMembers), ctx, chatID)
+}
+
+// IsUserInChat mocks base method.
+func (m *MockMessengerCache) IsUserInChat(ctx context.Context, chatID, userID string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsUserInChat", ctx, chatID, userID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsUserInChat indicates an expected call of IsUserInChat.
+func (mr *MockMessengerCacheMockRecorder) IsUserInChat(ctx, chatID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUserInChat", reflect.TypeOf((*MockMessengerCache)(nil).IsUserInChat), ctx, chatID, userID)
 }
 
 // RemoveChatUser mocks base method.

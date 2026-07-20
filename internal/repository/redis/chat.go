@@ -81,3 +81,17 @@ func (r *RedisCache) GetChatMembers(ctx context.Context, chatID string) ([]strin
 
 	return userIDs, nil
 }
+
+// IsUserInChat checks membership of user into the chat.
+func (r *RedisCache) IsUserInChat(ctx context.Context, userID string, chatID string) (bool, error) {
+	isMember, err := r.rdb.SIsMember(ctx, chatID, userID).Result()
+	if err != nil {
+		return false, errs.NewAppError(
+			errs.CodeRedisError,
+			"cache error: failed to check availability of value into cache",
+			fmt.Errorf("cache error: failed to check availability of value into cache: %w", err),
+		)
+	}
+
+	return isMember, nil
+}

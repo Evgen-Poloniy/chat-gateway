@@ -2,8 +2,10 @@ package messenger
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/model"
 	"github.com/google/uuid"
 )
@@ -77,13 +79,42 @@ func (m *MessengerService) CreateUser(ctx context.Context, user *entity.User) er
 }
 
 // GetUserIDsByChatID gets user_id by all users who are in the chat.
-func (m *MessengerService) GetUserIDsByChatID(ctx context.Context, chatID uuid.UUID) (userIDs uuid.UUIDs, err error) {
-	chatIDs, err := m.messengerRepository.GetUserIDsByChatID(ctx, chatID)
+func (m *MessengerService) GetUserIDsByChatID(ctx context.Context, chatID uuid.UUID) (uuid.UUIDs, error) {
+	cacheUserIDs, err := m.messengerCache.GetChatMembers(ctx, chatID.String())
 	if err != nil {
 		return nil, err
 	}
+	if len(cacheUserIDs) == 0 {
+		dbUserIDs, err := m.messengerRepository.GetUserIDsByChatID(ctx, chatID)
+		if err != nil {
+			return nil, err
+		}
+		if len(dbUserIDs) == 0 {
+			return nil, errs.NewAppError(
+				errs.CodeChatNotFound,
+				fmt.Sprintf("chat %s has no registered members", chatID),
+				fmt.Errorf("chat %s has no registered members", chatID),
+			)
+		}
 
-	return chatIDs, nil
+		return dbUserIDs, nil
+	}
+
+	userIDs := make(uuid.UUIDs, 0, len(cacheUserIDs))
+
+	for _, userID := range cacheUserIDs {
+		id, err := uuid.Parse(userID)
+		if err != nil {
+			return nil, errs.NewAppError(
+				errs.CodeValidationError,
+				"validation error: invalid user uuid",
+				fmt.Errorf("validation error: invalid user uuid: %w", err),
+			)
+		}
+		userIDs = append(userIDs, id)
+	}
+
+	return userIDs, nil
 }
 
 // UpdateUser updates data about user into messenger database.

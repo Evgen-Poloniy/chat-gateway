@@ -127,14 +127,6 @@ func (p *PostgresRepository) GetUserIDsByChatID(ctx context.Context, chatID uuid
 		)
 	}
 
-	if len(userIDs) == 0 {
-		return nil, errs.NewAppError(
-			errs.CodeChatNotFound,
-			fmt.Sprintf("database error: no members found for chat id: %s", chatID),
-			fmt.Errorf("database error: chat %s has no registered members", chatID),
-		)
-	}
-
 	return userIDs, nil
 }
 

@@ -8,6 +8,7 @@ const (
 	CodeUserNotFound         ErrCode = "user_not_found"
 	CodeChatNotFound         ErrCode = "chat_not_found"
 	CodeUsersNotFound        ErrCode = "users_not_found"
+	CodeUserIsNotInChat      ErrCode = "user_is_not_chat_member"
 	CodeUserHaveNotChats     ErrCode = "user_has_no_chats"
 	CodeUniqueViolation      ErrCode = "unique_violation"
 	CodeForeignKeyViolation  ErrCode = "foreign_key_violation"
@@ -63,6 +64,7 @@ var (
 	ErrInvalidChatID            = errors.New("invalid chat_id")
 	ErrEmptyUserIDs             = errors.New("empty list of user ids")
 	ErrUserIDsConversionFailure = errors.New("user ids conversion failure")
+	ErrUserIsNotInChat          = errors.New("user is not chat member")
 )
 
 // Transport errors.

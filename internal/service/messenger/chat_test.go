@@ -309,8 +309,10 @@ func TestMessengerService_CreateGroupChat(t *testing.T) {
 
 func TestMessengerService_GetChatsByUserID(t *testing.T) {
 	userID := uuid.New()
-	chatID := uuid.New()
+	chatID1 := uuid.New()
+	chatID2 := uuid.New()
 	ownerID := uuid.New()
+	now := time.Now()
 
 	tests := []struct {
 		name              string
@@ -330,22 +332,40 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 				mockRepo.EXPECT().
 					GetChatsByUserID(gomock.Any(), userID, 10, 0).
 					Return([]model.Chat{
-						{ChatID: chatID, ChatType: "direct", Name: ptr("Chat 1"), OwnerID: ptr(ownerID)},
+						{
+							ChatID:      chatID1,
+							ChatType:    "direct",
+							Name:        ptr("Chat 1"),
+							Title:       nil,
+							Description: nil,
+							CreatedAt:   now,
+							OwnerID:     &ownerID,
+						},
+						{
+							ChatID:      chatID2,
+							ChatType:    "group",
+							Name:        ptr("Group Chat"),
+							Title:       ptr("Title"),
+							Description: ptr("Desc"),
+							CreatedAt:   now,
+							OwnerID:     &userID,
+						},
 					}, nil)
 			},
 			wantErr: false,
 		},
 		{
-			name:   "Success - Empty Result",
-			userID: uuid.New(),
+			name:   "Error - Chat Not Found (Empty Result)",
+			userID: userID,
 			limit:  10,
 			offset: 0,
 			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
 				mockRepo.EXPECT().
-					GetChatsByUserID(gomock.Any(), gomock.Any(), 10, 0).
+					GetChatsByUserID(gomock.Any(), userID, 10, 0).
 					Return([]model.Chat{}, nil)
 			},
-			wantErr: false,
+			wantErr:           true,
+			expectedErrorCode: errs.CodeChatNotFound,
 		},
 		{
 			name:   "Error - Repository Failed",
@@ -376,16 +396,22 @@ func TestMessengerService_GetChatsByUserID(t *testing.T) {
 			if tt.wantErr {
 				assert.Error(t, err)
 				var appErr *errs.AppError
-				if errors.As(err, &appErr) {
+				if assert.ErrorAs(t, err, &appErr) {
 					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
 				}
 				assert.Nil(t, chats)
 			} else {
 				assert.NoError(t, err)
-				if tt.name == "Success" {
-					require.Len(t, chats, 1)
-					assert.Equal(t, chatID, chats[0].ChatID)
-				}
+				require.NotNil(t, chats)
+				assert.Len(t, chats, 2)
+
+				assert.Equal(t, chatID1, chats[0].ChatID)
+				assert.Equal(t, "direct", chats[0].ChatType)
+				assert.Equal(t, "Chat 1", *chats[0].Name)
+
+				assert.Equal(t, chatID2, chats[1].ChatID)
+				assert.Equal(t, "group", chats[1].ChatType)
+				assert.Equal(t, "Group Chat", *chats[1].Name)
 			}
 		})
 	}
@@ -395,7 +421,6 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 	now := time.Now()
 	chatID := uuid.New()
 	updaterID := uuid.New()
-	newOwnerID := uuid.New()
 
 	tests := []struct {
 		name              string
@@ -412,6 +437,43 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				Name:          ptr("New Name"),
 			},
 			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(true, nil)
+
+				mockRepo.EXPECT().
+					UpdateGroupChat(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
+						m.CreatedAt = now
+						return nil
+					})
+
+				mockCache.EXPECT().
+					ExpireChatID(gomock.Any(), chatID.String()).
+					Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "Success - User not in cache but in database",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
+				Name:          ptr("New Name"),
+			},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(false, nil)
+
+				mockRepo.EXPECT().
+					IsUserInChat(gomock.Any(), chatID, updaterID).
+					Return(true, nil)
+
+				mockCache.EXPECT().
+					AddChatMembers(gomock.Any(), chatID.String(), []string{updaterID.String()}).
+					Return(nil)
+
 				mockRepo.EXPECT().
 					UpdateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
@@ -433,9 +495,62 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				Name:          ptr(strings.Repeat("A", 64)),
 				Title:         ptr(strings.Repeat("B", 64)),
 				Description:   ptr(strings.Repeat("C", 255)),
-				OwnerID:       ptr(newOwnerID),
 			},
 			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(true, nil)
+
+				mockRepo.EXPECT().
+					UpdateGroupChat(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
+						m.CreatedAt = now
+						return nil
+					})
+
+				mockCache.EXPECT().
+					ExpireChatID(gomock.Any(), chatID.String()).
+					Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "Success - Only Description Update",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
+				Description:   ptr("New description"),
+			},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(true, nil)
+
+				mockRepo.EXPECT().
+					UpdateGroupChat(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
+						m.CreatedAt = now
+						return nil
+					})
+
+				mockCache.EXPECT().
+					ExpireChatID(gomock.Any(), chatID.String()).
+					Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "Success - Only Title Update",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
+				Title:         ptr("New Title"),
+			},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(true, nil)
+
 				mockRepo.EXPECT().
 					UpdateGroupChat(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
@@ -457,12 +572,118 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 				Name:          ptr("New Name"),
 			},
 			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(true, nil)
+
 				mockRepo.EXPECT().
 					UpdateGroupChat(gomock.Any(), gomock.Any()).
 					Return(errRepoQueryError)
 			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeQueryError,
+		},
+		{
+			name: "Error - Cache Check Failed",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
+				Name:          ptr("New Name"),
+			},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(false, errCacheFailed)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeRedisError,
+		},
+		{
+			name: "Error - Database Check Failed",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
+				Name:          ptr("New Name"),
+			},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(false, nil)
+
+				mockRepo.EXPECT().
+					IsUserInChat(gomock.Any(), chatID, updaterID).
+					Return(false, errRepoQueryError)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+		{
+			name: "Error - User Not In Chat",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
+				Name:          ptr("New Name"),
+			},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(false, nil)
+
+				mockRepo.EXPECT().
+					IsUserInChat(gomock.Any(), chatID, updaterID).
+					Return(false, nil)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUserIsNotInChat,
+		},
+		{
+			name: "Error - Add Chat Members to Cache Failed",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
+				Name:          ptr("New Name"),
+			},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(false, nil)
+
+				mockRepo.EXPECT().
+					IsUserInChat(gomock.Any(), chatID, updaterID).
+					Return(true, nil)
+
+				mockCache.EXPECT().
+					AddChatMembers(gomock.Any(), chatID.String(), []string{updaterID.String()}).
+					Return(errCacheFailed)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeRedisError,
+		},
+		{
+			name: "Error - Expire Cache Failed",
+			input: &entity.UpdateGroupChat{
+				UserIDUpdater: updaterID,
+				ChatID:        chatID,
+				Name:          ptr("New Name"),
+			},
+			mock: func(mockRepo *mock_repository.MockMessengerRepository, mockCache *mock_repository.MockMessengerCache) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), updaterID.String()).
+					Return(true, nil)
+
+				mockRepo.EXPECT().
+					UpdateGroupChat(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, m *model.UpdateGroupChat) error {
+						m.CreatedAt = now
+						return nil
+					})
+
+				mockCache.EXPECT().
+					ExpireChatID(gomock.Any(), chatID.String()).
+					Return(errCacheFailed)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeRedisError,
 		},
 		{
 			name: "Error - Validation (Missing UserIDUpdater - Nil UUID)",
@@ -562,21 +783,28 @@ func TestMessengerService_UpdateGroupChat(t *testing.T) {
 }
 
 func TestMessengerService_SendMessage(t *testing.T) {
+	chatID := uuid.New()
+	senderID := uuid.New()
+
 	tests := []struct {
 		name              string
 		input             *entity.SendMessage
-		mock              func(mockBroker *mock_repository.MockMessageBroker)
+		mock              func(mockBroker *mock_repository.MockMessageBroker, mockCache *mock_repository.MockMessengerCache, mockRepo *mock_repository.MockMessengerRepository)
 		wantErr           bool
 		expectedErrorCode errs.ErrCode
 	}{
 		{
-			name: "Success",
+			name: "Success - User In Cache",
 			input: &entity.SendMessage{
-				ChatID:   uuid.New(),
-				SenderID: uuid.New(),
+				ChatID:   chatID,
+				SenderID: senderID,
 				Message:  "Hello World",
 			},
-			mock: func(mockBroker *mock_repository.MockMessageBroker) {
+			mock: func(mockBroker *mock_repository.MockMessageBroker, mockCache *mock_repository.MockMessengerCache, mockRepo *mock_repository.MockMessengerRepository) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), senderID.String()).
+					Return(true, nil)
+
 				mockBroker.EXPECT().
 					SendMessage(gomock.Any(), gomock.Any()).
 					Return(nil)
@@ -584,27 +812,62 @@ func TestMessengerService_SendMessage(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Success - Boundary Values",
+			name: "Success - User Not In Cache, Found In DB",
 			input: &entity.SendMessage{
-				ChatID:   uuid.New(),
-				SenderID: uuid.New(),
-				Message:  strings.Repeat("A", 4096),
+				ChatID:   chatID,
+				SenderID: senderID,
+				Message:  "Hello World",
 			},
-			mock: func(mockBroker *mock_repository.MockMessageBroker) {
+			mock: func(mockBroker *mock_repository.MockMessageBroker, mockCache *mock_repository.MockMessengerCache, mockRepo *mock_repository.MockMessengerRepository) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), senderID.String()).
+					Return(false, nil)
+
+				mockRepo.EXPECT().
+					IsUserInChat(gomock.Any(), chatID, senderID).
+					Return(true, nil)
+
+				mockCache.EXPECT().
+					AddChatMembers(gomock.Any(), chatID.String(), []string{senderID.String()}).
+					Return(nil)
+
 				mockBroker.EXPECT().
 					SendMessage(gomock.Any(), gomock.Any()).
 					Return(nil)
 			},
 			wantErr: false,
+		},
+		{
+			name: "Error - User Not In Chat (DB)",
+			input: &entity.SendMessage{
+				ChatID:   chatID,
+				SenderID: senderID,
+				Message:  "Hello World",
+			},
+			mock: func(mockBroker *mock_repository.MockMessageBroker, mockCache *mock_repository.MockMessengerCache, mockRepo *mock_repository.MockMessengerRepository) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), senderID.String()).
+					Return(false, nil)
+
+				mockRepo.EXPECT().
+					IsUserInChat(gomock.Any(), chatID, senderID).
+					Return(false, nil)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUserIsNotInChat,
 		},
 		{
 			name: "Error - Broker Failed",
 			input: &entity.SendMessage{
-				ChatID:   uuid.New(),
-				SenderID: uuid.New(),
+				ChatID:   chatID,
+				SenderID: senderID,
 				Message:  "Hello World",
 			},
-			mock: func(mockBroker *mock_repository.MockMessageBroker) {
+			mock: func(mockBroker *mock_repository.MockMessageBroker, mockCache *mock_repository.MockMessengerCache, mockRepo *mock_repository.MockMessengerRepository) {
+				mockCache.EXPECT().
+					IsUserInChat(gomock.Any(), chatID.String(), senderID.String()).
+					Return(true, nil)
+
 				mockBroker.EXPECT().
 					SendMessage(gomock.Any(), gomock.Any()).
 					Return(errBrokerError)
@@ -619,7 +882,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.New(),
 				Message:  "Hello World",
 			},
-			mock:              func(mockBroker *mock_repository.MockMessageBroker) {},
+			mock: func(mockBroker *mock_repository.MockMessageBroker, mockCache *mock_repository.MockMessengerCache, mockRepo *mock_repository.MockMessengerRepository) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -630,7 +894,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.Nil,
 				Message:  "Hello World",
 			},
-			mock:              func(mockBroker *mock_repository.MockMessageBroker) {},
+			mock: func(mockBroker *mock_repository.MockMessageBroker, mockCache *mock_repository.MockMessengerCache, mockRepo *mock_repository.MockMessengerRepository) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -641,7 +906,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.New(),
 				Message:  "",
 			},
-			mock:              func(mockBroker *mock_repository.MockMessageBroker) {},
+			mock: func(mockBroker *mock_repository.MockMessageBroker, mockCache *mock_repository.MockMessengerCache, mockRepo *mock_repository.MockMessengerRepository) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -652,7 +918,8 @@ func TestMessengerService_SendMessage(t *testing.T) {
 				SenderID: uuid.New(),
 				Message:  strings.Repeat("A", 4097),
 			},
-			mock:              func(mockBroker *mock_repository.MockMessageBroker) {},
+			mock: func(mockBroker *mock_repository.MockMessageBroker, mockCache *mock_repository.MockMessengerCache, mockRepo *mock_repository.MockMessengerRepository) {
+			},
 			wantErr:           true,
 			expectedErrorCode: errs.CodeValidationError,
 		},
@@ -663,9 +930,9 @@ func TestMessengerService_SendMessage(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			svc, _, mockBroker, _ := setupMockService(ctrl)
+			svc, mockRepo, mockBroker, mockCache := setupMockService(ctrl)
 
-			tt.mock(mockBroker)
+			tt.mock(mockBroker, mockCache, mockRepo)
 
 			err := svc.SendMessage(context.Background(), tt.input)
 

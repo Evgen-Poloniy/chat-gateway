@@ -441,21 +441,6 @@ func TestPostgresRepository_GetChatsByUserID(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "Error - Chats Not Found",
-			userID: userID,
-			limit:  10,
-			offset: 0,
-			mock: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "type", "name", "title", "description", "created_at", "owner_id"})
-
-				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(userID, 10, 0).
-					WillReturnRows(rows)
-			},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeChatNotFound,
-		},
-		{
 			name:   "Error - Query Failed",
 			userID: userID,
 			limit:  10,
@@ -643,6 +628,79 @@ func TestPostgresRepository_UpdateGroupChat(t *testing.T) {
 				if assert.ErrorAs(t, err, &appErr) {
 					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
 				}
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestPostgresRepository_IsUserInChat(t *testing.T) {
+	chatID := uuid.New()
+	userID := uuid.New()
+
+	query := `
+    SELECT EXISTS (
+        SELECT 1
+        FROM chat_members
+        WHERE chat_id = $1 AND user_id = $2
+    )`
+
+	tests := []struct {
+		name              string
+		chatID            uuid.UUID
+		userID            uuid.UUID
+		mock              func(mock sqlmock.Sqlmock)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
+	}{
+		{
+			name:   "Success - User Is Member",
+			chatID: chatID,
+			userID: userID,
+			mock: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"exists"}).
+					AddRow(true)
+
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WithArgs(chatID, userID).
+					WillReturnRows(rows)
+			},
+			wantErr: false,
+		},
+		{
+			name:   "Error - Query Failed",
+			chatID: chatID,
+			userID: userID,
+			mock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WithArgs(chatID, userID).
+					WillReturnError(errSyntaxError)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			repo := pg.NewPostgresRepository(db)
+			tt.mock(mock)
+
+			isMember, err := repo.IsUserInChat(context.Background(), tt.chatID, tt.userID)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
+				assert.False(t, isMember)
 			} else {
 				assert.NoError(t, err)
 			}

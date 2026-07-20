@@ -336,19 +336,6 @@ func TestPostgresRepository_GetUserIDsByChatID(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "Error - Chats Not Found",
-			chatID: chatID,
-			mock: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"user_id"})
-
-				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(chatID).
-					WillReturnRows(rows)
-			},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeChatNotFound,
-		},
-		{
 			name:   "Error - Query Failed",
 			chatID: chatID,
 			mock: func(mock sqlmock.Sqlmock) {

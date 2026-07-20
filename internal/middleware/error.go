@@ -13,8 +13,8 @@ import (
 var httpStatusMap = map[errs.ErrCode]int{
 	errs.CodeUserNotFound:         http.StatusNotFound,
 	errs.CodeChatNotFound:         http.StatusNotFound,
-	errs.CodeUsersNotFound:        http.StatusNotFound,
-	errs.CodeUserHaveNotChats:     http.StatusNotFound,
+	errs.CodeUsersNotFound:        http.StatusNoContent,
+	errs.CodeUserHaveNotChats:     http.StatusNoContent,
 	errs.CodeUniqueViolation:      http.StatusConflict,
 	errs.CodeForeignKeyViolation:  http.StatusConflict,
 	errs.CodeUsernameIsRequired:   http.StatusBadRequest,

@@ -178,14 +178,6 @@ func (p *PostgresRepository) GetChatsByUserID(ctx context.Context, userID uuid.U
 		)
 	}
 
-	if len(chats) == 0 {
-		return nil, errs.NewAppError(
-			errs.CodeChatNotFound,
-			fmt.Sprintf("database error: records about user chats with user_id '%s' not found", userID),
-			fmt.Errorf("database error: records about user chats with user_id '%s' not found", userID),
-		)
-	}
-
 	return chats, nil
 }
 
@@ -242,4 +234,26 @@ func (p *PostgresRepository) UpdateGroupChat(ctx context.Context, chat *model.Up
 	}
 
 	return nil
+}
+
+// IsUserInChat checks membership of user into the chat.
+func (p *PostgresRepository) IsUserInChat(ctx context.Context, chatID uuid.UUID, userID uuid.UUID) (bool, error) {
+	query := `
+    SELECT EXISTS (
+        SELECT 1
+        FROM chat_members
+        WHERE chat_id = $1 AND user_id = $2
+    )`
+
+	var isMember bool
+	err := p.db.GetContext(ctx, &isMember, query, chatID, userID)
+	if err != nil {
+		return false, errs.NewAppError(
+			errs.CodeQueryError,
+			"database error: query error",
+			fmt.Errorf("database error: %v", err),
+		)
+	}
+
+	return isMember, nil
 }

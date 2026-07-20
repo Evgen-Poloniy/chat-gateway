@@ -46,6 +46,9 @@ type MessengerRepository interface {
 
 	// UpdateGroupChat updates data about chat like name, title, description, owner.
 	UpdateGroupChat(ctx context.Context, chat *model.UpdateGroupChat) error
+
+	// IsUserInChat checks membership of user into the chat.
+	IsUserInChat(ctx context.Context, chatID uuid.UUID, userID uuid.UUID) (bool, error)
 }
 
 // MessageBroker represents interface for work with the messenger broker.
@@ -67,6 +70,9 @@ type MessengerCache interface {
 
 	// GetChatMembers allows get user_ids from cache by chat_id.
 	GetChatMembers(ctx context.Context, chatID string) ([]string, error)
+
+	// IsUserInChat checks membership of user into the chat.
+	IsUserInChat(ctx context.Context, chatID string, userID string) (bool, error)
 }
 
 // MessengerService represents implementation of messenger interface.
