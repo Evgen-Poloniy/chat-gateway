@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/middleware"
 	kfk "github.com/Evgen-Poloniy/chat-gateway/internal/repository/kafka"
 	pg "github.com/Evgen-Poloniy/chat-gateway/internal/repository/postgres"
 	rds "github.com/Evgen-Poloniy/chat-gateway/internal/repository/redis"
@@ -27,22 +28,11 @@ import (
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/logs"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func Run() {
-	apiKey := os.Getenv("API_KEY")
-	if apiKey == "" {
-		logrus.Fatal("required API_KEY")
-	}
-
-	apiKeyHash, err := bcrypt.GenerateFromPassword([]byte(apiKey), bcrypt.DefaultCost)
-	if err != nil {
-		logrus.Fatalf("error when generation API_KEY hash: %v", err)
-	}
-
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		logrus.Fatalf("error when loading env CONFIG_PATH")
@@ -53,7 +43,15 @@ func Run() {
 		logrus.Fatalf("error when loading config: %v", err)
 	}
 
-	logger := logs.NewLogrusLogger(logs.WithLevel(config.Logger.Level), logs.WithFormat(config.Logger.Format))
+	logger := logs.NewLogrusLogger(
+		logs.WithLevel(config.Logger.Level),
+		logs.WithFormat(config.Logger.Format),
+	)
+
+	jwks, err := middleware.InitKeyfunc(config.Auth.JWKSURL, logger)
+	if err != nil {
+		logger.Fatalf("keyfunc initialization error: %v", err)
+	}
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		config.Postgres.Host,
@@ -159,7 +157,7 @@ func Run() {
 	v1Handler := v1.NewHandler(messenger, wsHub)
 	wsHandler := ws.NewHandler(wsHub, logger)
 	router := router.NewRouter(&config.CORS, logger)
-	v1.NewRouter(router, v1Handler, apiKeyHash)
+	v1.NewRouter(router, v1Handler, jwks, &config.Auth)
 	ws.NewRouter(router, wsHandler)
 
 	logger.Info("starting dispatch messages")

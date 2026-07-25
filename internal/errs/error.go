@@ -30,6 +30,8 @@ const (
 	CodeMissingAuthHeaders   ErrCode = "missing_auth_headers"
 	CodeWrongAuthHeader      ErrCode = "wrong_auth_header"
 	CodeInvalidAPIKey        ErrCode = "invalid_api_key"
+	CodeInvalidToken         ErrCode = "invalid_token"
+	CodeInvalidTokenClaims   ErrCode = "invalid_token_claims"
 )
 
 // App error
@@ -69,8 +71,10 @@ var (
 
 // Transport errors.
 var (
-	ErrMissingAuthHeader      = errors.New("missing authentication header")
-	ErrWrongAuthHeader        = errors.New("wrong authentication header")
+	ErrMissingAuthHeader      = errors.New("authorization header is required")
+	ErrInvalidAuthHeader      = errors.New("invalid authorization header format")
+	ErrInvalidToken           = errors.New("invalid or expired token")
+	ErrInvalidTokenClaims     = errors.New("invalid token claims")
 	ErrInvalidAPIKey          = errors.New("invalid API-Key")
 	ErrUsernameIsRequired     = errors.New("username is required")
 	ErrUserIdIsRequired       = errors.New("user_id is required")

@@ -1,11 +1,13 @@
 package v1
 
 import (
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/middleware"
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(router *gin.Engine, handler *Handler, apiKeyHash []byte) {
+func NewRouter(router *gin.Engine, handler *Handler, jwks keyfunc.Keyfunc, config *config.AuthConfig) {
 	v1 := router.Group("/api/v1")
 
 	auth := v1.Group("/auth")
@@ -14,7 +16,10 @@ func NewRouter(router *gin.Engine, handler *Handler, apiKeyHash []byte) {
 	}
 
 	protected := v1.Group("")
-	protected.Use(middleware.APIKeyAuth(apiKeyHash))
+	protected.Use(
+		middleware.APIKeyAuth(config.ApiKeyHash),
+		middleware.AuthMiddleware(jwks, config),
+	)
 	{
 		chats := protected.Group("/chats")
 		{

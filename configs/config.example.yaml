@@ -88,3 +88,8 @@ resolver:
 
 dispatch:
   send_cap: 64
+
+auth:
+  jwks_url: "https://casdoor.example.com/.well-known/jwks.json"
+  allowed_signing_algorithms:
+    - "RS256"

@@ -1,10 +1,14 @@
 package config
 
 import (
+	"errors"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/ilyakaznacheev/cleanenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Acceptable logger levels.
@@ -110,6 +114,29 @@ type DispatchConfig struct {
 	NumWorkers     int `yaml:"num_workers" validate:"gte=1"`
 }
 
+// AuthConfig represents authentication config.
+type AuthConfig struct {
+	JWKSURL           string   `yaml:"jwks_url" env-required:"true"`
+	SigningAlgorithms []string `yaml:"signing_algorithms" env-default:"RS256"`
+	ApiKeyHash        []byte   `yaml:"-"`
+}
+
+// generateHash generates API-Key hash.
+func (a *AuthConfig) generateHash() error {
+	apiKey := os.Getenv("API_KEY")
+	if apiKey == "" {
+		return errors.New("required API_KEY")
+	}
+
+	apiKeyHash, err := bcrypt.GenerateFromPassword([]byte(apiKey), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("error when generation API_KEY hash: %w", err)
+	}
+	a.ApiKeyHash = apiKeyHash
+
+	return nil
+}
+
 // Config represents dataclass with all configs.
 type Config struct {
 	Server   ServerConfig   `yaml:"server"`
@@ -120,19 +147,24 @@ type Config struct {
 	Redis    RedisConfig    `yaml:"redis"`
 	Resolver ResolverConfig `yaml:"resolver"`
 	Dispatch DispatchConfig `yaml:"dispatch"`
+	Auth     AuthConfig     `yaml:"auth"`
 }
 
 // Load config from config/config.yaml.
-func LoadConfig(path string) (Config, error) {
+func LoadConfig(path string) (*Config, error) {
 	var config Config
 	if err := cleanenv.ReadConfig(path, &config); err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
 	validate := validator.New()
 	if err := validate.Struct(config); err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
-	return config, nil
+	if err := config.Auth.generateHash(); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
