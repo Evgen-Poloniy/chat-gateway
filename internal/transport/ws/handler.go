@@ -1,7 +1,9 @@
 package ws
 
 import (
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
@@ -15,13 +17,17 @@ var wsCloseCodeMap = map[errs.ErrCode]int{
 }
 
 type Handler struct {
-	wsHub  *Hub
-	logger *logrus.Logger
+	wsHub    *Hub
+	jwks     keyfunc.Keyfunc
+	authConf *config.AuthConfig
+	logger   *logrus.Logger
 }
 
-func NewHandler(wsHub *Hub, logger *logrus.Logger) *Handler {
+func NewHandler(wsHub *Hub, jwks keyfunc.Keyfunc, authConf *config.AuthConfig, logger *logrus.Logger) *Handler {
 	return &Handler{
-		wsHub:  wsHub,
-		logger: logger,
+		wsHub:    wsHub,
+		jwks:     jwks,
+		authConf: authConf,
+		logger:   logger,
 	}
 }

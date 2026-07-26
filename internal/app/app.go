@@ -155,7 +155,7 @@ func Run() {
 	address := fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port)
 	wsHub := ws.NewHub(resolver, &config.Dispatch, address, logger)
 	v1Handler := v1.NewHandler(messenger, wsHub)
-	wsHandler := ws.NewHandler(wsHub, logger)
+	wsHandler := ws.NewHandler(wsHub, jwks, &config.Auth, logger)
 	router := router.NewRouter(&config.CORS, logger)
 	v1.NewRouter(router, v1Handler, jwks, &config.Auth)
 	ws.NewRouter(router, wsHandler)
