@@ -23,14 +23,14 @@ func NewRouter(config *config.CORSConfig, logger *logrus.Logger) *gin.Engine {
 
 	router.NoRoute(func(c *gin.Context) {
 		statusCode := http.StatusNotFound
-		code := "NOT_FOUND"
+		code := "not_found"
 		message := fmt.Sprintf("endpoint with URL %s not found", c.Request.URL.Path)
 		logAndResponseJSON(c, logger, statusCode, code, message)
 	})
 
 	router.NoMethod(func(c *gin.Context) {
 		statusCode := http.StatusMethodNotAllowed
-		code := "METHOD_NOT_ALLOWED"
+		code := "method_not_allowed"
 		message := fmt.Sprintf("method %s for URL %s not allowed", c.Request.Method, c.Request.URL.Path)
 		logAndResponseJSON(c, logger, statusCode, code, message)
 	})
