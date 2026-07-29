@@ -45,34 +45,34 @@ kafka:
   acks: "all"
 
   # Prevents duplicate messages and strictly guarantees ordering per partition.
-  enable.idempotence: true
+  enable_idempotence: true
 
   # Infinite retries for transient network errors.
   retries: 2147483647
 
   # Max parallel requests. Value of 5 maintains order when idempotence is true.
-  max.in.flight.requests.per.connection: 5
+  max_in_flight_requests_per.connection: 5
 
   # --- Latency & Batching ---
   # Time to wait (ms) to group messages. 5ms balances low latency and efficiency.
-  linger.ms: 20
+  linger_ms: 20
 
   # Maximum number of messages per batch.
-  batch.num.messages: 1000
+  batch_num_messages: 1000
 
   # --- Compression ---
   # Compresses text efficiently with minimal CPU overhead.
-  compression.type: "lz4"
+  compression_type: "lz4"
 
   # --- Queue Management ---
   # Max messages allowed in the local producer queue buffer.
-  queue.buffering.max.messages: 100000
+  queue_buffering_max_messages: 100000
 
   # Max time (ms) a message can spend in the queue before failing.
-  message.timeout.ms: 30000
+  message_timeout_ms: 30000
 
   # Number of partitions
-  num.partitions: 1
+  num_partitions: 1
 
   # Timeout for flush messages into broker (s)
   flash_timeout: 15
@@ -88,6 +88,7 @@ resolver:
 
 dispatch:
   send_cap: 64
+  num_workers: 8
 
 auth:
   jwks_url: "https://casdoor.example.com/.well-known/jwks.json"

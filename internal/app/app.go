@@ -70,7 +70,7 @@ func Run() {
 		postgres.WithConnMaxIdleLifetime(config.Postgres.ConnMaxIdleLifetime),
 	)
 	if err != nil {
-		logger.Errorf("database error: %v", err)
+		logger.Fatalf("database error: %v", err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
@@ -94,7 +94,7 @@ func Run() {
 
 	producer, err := kfkp.NewKafkaProducer(&configMap)
 	if err != nil {
-		logger.Errorf("message broker error: %v", err)
+		logger.Fatalf("message broker error: %v", err)
 	}
 	defer func() {
 		unflushedCount := producer.Flush(config.Kafka.FlashTimeout * 1000)

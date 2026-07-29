@@ -1,14 +1,10 @@
 package config
 
 import (
-	"errors"
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/ilyakaznacheev/cleanenv"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Acceptable logger levels.
@@ -75,20 +71,20 @@ type PostgresConfig struct {
 // KafkaConfig represents broker config from env and config.yaml.
 type KafkaConfig struct {
 	BootstrapServers           string `env:"KAFKA_BOOTSTRAP_SERVERS" env-required:"true"`
-	User                       string `env:"KAFKA_USER" env-required:"true"`
-	Password                   string `env:"KAFKA_PASSWORD" env-required:"true"`
-	SASLMechanism              string `env:"KAFKA_SASL_MECHANISM" validate:"oneof=PLAIN SCRAM-SHA-256 SCRAM-SHA-512"`
-	SecurityProtocol           string `env:"KAFKA_SECURITY_PROTOCOL" validate:"oneof=PLAINTEXT SASL_PLAINTEXT SASL_SSL SSL"`
+	User                       string `env:"KAFKA_USER"`
+	Password                   string `env:"KAFKA_PASSWORD"`
+	SASLMechanism              string `env:"KAFKA_SASL_MECHANISM" validate:"omitempty,oneof=PLAIN SCRAM-SHA-256 SCRAM-SHA-512"`
+	SecurityProtocol           string `env:"KAFKA_SECURITY_PROTOCOL" validate:"omitempty,oneof=PLAINTEXT SASL_PLAINTEXT SASL_SSL SSL"`
 	Acks                       string `yaml:"acks"`
 	EnableIdempotence          bool   `yaml:"enable_idempotence"`
 	Retries                    int    `yaml:"retries"`
 	MaxInFlightRequestsPerConn int    `yaml:"max_in_flight_requests_per_connection"`
 	LingerMs                   int    `yaml:"linger_ms"`
 	BatchNumMessages           int    `yaml:"batch_num_messages"`
-	CompressionType            string `yaml:"compression_type" validate:"oneof=none gzip snpappy lz4 zstd"`
+	CompressionType            string `yaml:"compression_type" validate:"oneof=none gzip snappy lz4 zstd"`
 	QueueBufferingMaxMessages  int    `yaml:"queue_buffering_max_messages"`
-	MessageTimeout             int    `yaml:"message_timeout"`
-	NumPartitions              int    `yaml:"num.partitions"`
+	MessageTimeout             int    `yaml:"message_timeout_ms"`
+	NumPartitions              int    `yaml:"num_partitions"`
 	FlashTimeout               int    `yaml:"flash_timeout"`
 }
 
@@ -118,23 +114,8 @@ type DispatchConfig struct {
 type AuthConfig struct {
 	JWKSURL           string   `yaml:"jwks_url" env-required:"true"`
 	SigningAlgorithms []string `yaml:"signing_algorithms" env-default:"RS256"`
-	ApiKeyHash        []byte   `yaml:"-"`
-}
-
-// generateHash generates API-Key hash.
-func (a *AuthConfig) generateHash() error {
-	apiKey := os.Getenv("API_KEY")
-	if apiKey == "" {
-		return errors.New("required API_KEY")
-	}
-
-	apiKeyHash, err := bcrypt.GenerateFromPassword([]byte(apiKey), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("error when generation API_KEY hash: %w", err)
-	}
-	a.ApiKeyHash = apiKeyHash
-
-	return nil
+	ApiKey            string   `env:"API_KEY" env-required:"true"`
+	IdPApiKey         string   `env:"IDP_API_KEY" env-required:"true"`
 }
 
 // Config represents dataclass with all configs.
@@ -159,10 +140,6 @@ func LoadConfig(path string) (*Config, error) {
 
 	validate := validator.New()
 	if err := validate.Struct(config); err != nil {
-		return nil, err
-	}
-
-	if err := config.Auth.generateHash(); err != nil {
 		return nil, err
 	}
 
