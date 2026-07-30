@@ -91,6 +91,6 @@ dispatch:
   num_workers: 8
 
 auth:
-  jwks_url: "https://casdoor.example.com/.well-known/jwks.json"
+  jwks_url: "http://casdoor:8000/.well-known/jwks.json"
   allowed_signing_algorithms:
     - "RS256"
