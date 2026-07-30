@@ -35,8 +35,12 @@ func (h *Handler) WebSocketUpgrade(c *gin.Context) {
 
 	conn, err := h.wsHub.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		message := fmt.Sprintf("failed to upgrade connection to websocket: %v", err)
-		abortWithError(c, h.logger, http.StatusInternalServerError, "failed_to_upgrade_to_websocket_connection", message, start, requestID)
+		h.logger.WithFields(map[string]interface{}{
+			"id":     requestID,
+			"method": c.Request.Method,
+			"path":   c.Request.URL.Path,
+			"ip":     c.ClientIP(),
+		}).Error("failed to upgrade connection to websocket")
 		return
 	}
 

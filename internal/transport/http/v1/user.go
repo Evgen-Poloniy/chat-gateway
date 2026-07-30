@@ -51,65 +51,45 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.DataResp{Data: resp})
 }
 
-// UpdateChat updates data about chat like name, title, description, owner.
-func (h *Handler) UpdateUser(c *gin.Context) {
-	userIdParam := c.Param("user_id")
-	if userIdParam == "" {
-		c.Error(errs.NewAppError(
-			errs.CodeUserIdIsRequired,
-			errs.ErrUserIdIsRequired.Error(),
-			errs.ErrUserIdIsRequired,
-		))
-		return
-	}
+// // UpdateChat updates data about chat like name, title, description, owner.
+// func (h *Handler) UpdateUser(c *gin.Context) {
+// 	var req dto.UpdateUserReq
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.Error(errs.NewAppError(
+// 			errs.CodeBadRequest,
+// 			err.Error(),
+// 			err,
+// 		))
+// 		return
+// 	}
 
-	userID, err := uuid.Parse(userIdParam)
-	if err != nil {
-		c.Error(errs.NewAppError(
-			errs.CodeBadRequest,
-			"failed to parse parameter 'user_id' as uuid",
-			fmt.Errorf("failed to parse parameter 'user_id' as uuid: %v", err),
-		))
-		return
-	}
+// 	user := &entity.UpdateUser{
+// 		UserID:    userID,
+// 		Username:  req.Username,
+// 		Email:     req.Email,
+// 		FirstName: req.FirstName,
+// 		LastName:  req.LastName,
+// 		BirthDate: req.BirthDate,
+// 		Gender:    req.Gender,
+// 	}
 
-	var req dto.UpdateUserReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(errs.NewAppError(
-			errs.CodeBadRequest,
-			err.Error(),
-			err,
-		))
-		return
-	}
+// 	if err := h.messenger.UpdateUser(c.Request.Context(), user); err != nil {
+// 		c.Error(err)
+// 	}
 
-	user := &entity.UpdateUser{
-		UserID:    userID,
-		Username:  req.Username,
-		Email:     req.Email,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		BirthDate: req.BirthDate,
-		Gender:    req.Gender,
-	}
+// 	resp := dto.UserDataResp{
+// 		UserID:    user.UserID,
+// 		Username:  *user.Username,
+// 		Email:     user.Email,
+// 		FirstName: user.FirstName,
+// 		LastName:  user.LastName,
+// 		BirthDate: user.BirthDate,
+// 		CreatedAt: user.CreatedAt,
+// 		Gender:    user.Gender,
+// 	}
 
-	if err := h.messenger.UpdateUser(c.Request.Context(), user); err != nil {
-		c.Error(err)
-	}
-
-	resp := dto.UserDataResp{
-		UserID:    user.UserID,
-		Username:  *user.Username,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		BirthDate: user.BirthDate,
-		CreatedAt: user.CreatedAt,
-		Gender:    user.Gender,
-	}
-
-	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
-}
+// 	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
+// }
 
 // SearchUser represents searching all data about user from the messenger database.
 func (h *Handler) SearchUser(c *gin.Context) {

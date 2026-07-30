@@ -3,9 +3,12 @@ package v1
 import (
 	"context"
 
+	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/ws"
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 // MessengerService represents interface for work with messenger business logic.
@@ -48,11 +51,17 @@ type MessengerService interface {
 type Handler struct {
 	messenger MessengerService
 	wsHub     *ws.Hub
+	jwks      keyfunc.Keyfunc
+	config    *config.AuthConfig
+	logger    *logrus.Logger
 }
 
-func NewHandler(messenger MessengerService, wsHub *ws.Hub) *Handler {
+func NewHandler(messenger MessengerService, wsHub *ws.Hub, jwks keyfunc.Keyfunc, config *config.AuthConfig, logger *logrus.Logger) *Handler {
 	return &Handler{
 		messenger: messenger,
 		wsHub:     wsHub,
+		jwks:      jwks,
+		config:    config,
+		logger:    logger,
 	}
 }

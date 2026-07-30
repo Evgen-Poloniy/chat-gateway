@@ -16,7 +16,7 @@ import (
 
 // NewRouter initializes HTTP API router and connects middlewares on target routers.
 func NewRouter(config *config.CORSConfig, logger *logrus.Logger) *gin.Engine {
-	gin.SetMode(gin.ReleaseMode)
+	// gin.SetMode(gin.ReleaseMode)
 
 	router := gin.New()
 	router.HandleMethodNotAllowed = true
@@ -41,17 +41,17 @@ func NewRouter(config *config.CORSConfig, logger *logrus.Logger) *gin.Engine {
 		middleware.SecureHeaders(),
 	)
 
-	api := router.Group("/")
-	api.Use(
+	baseAPI := router.Group("/")
+	baseAPI.Use(
 		middleware.Logger(logger),
 		middleware.ErrorHandler(),
 	)
 
-	api.GET("/health", func(c *gin.Context) {
+	baseAPI.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	api.GET("/healthz", func(c *gin.Context) {
+	baseAPI.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
