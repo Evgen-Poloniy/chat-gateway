@@ -11,49 +11,16 @@ import (
 
 func Logger(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var statusCode int
-
-		id := uuid.NewString()
-
-		entry := logger.WithFields(map[string]interface{}{
-			"id":     id,
-			"method": c.Request.Method,
-			"path":   c.Request.URL.Path,
-			"ip":     c.ClientIP(),
-		})
-
-		if len(c.Errors) > 0 {
-			err := c.Errors.Last().Err
-
-			statusCode = c.Writer.Status()
-			entry = entry.WithField("status_code", statusCode)
-
-			if val, exists := c.Get("code"); exists {
-				if v, ok := val.(string); ok {
-					entry = entry.WithField("code", v)
-				}
-			}
-
-			if statusCode >= 500 {
-				entry.Error(err.Error())
-			} else {
-				entry.Warn(err.Error())
-			}
-
-			return
-		}
-
-		entry.Info("request start")
-
+		requestID := uuid.NewString()
 		start := time.Now()
 
 		c.Next()
 
 		latency := time.Since(start)
-		statusCode = c.Writer.Status()
+		statusCode := c.Writer.Status()
 
-		entry = logger.WithFields(map[string]interface{}{
-			"id":          id,
+		entry := logger.WithFields(map[string]interface{}{
+			"id":          requestID,
 			"method":      c.Request.Method,
 			"path":        c.Request.URL.Path,
 			"ip":          c.ClientIP(),

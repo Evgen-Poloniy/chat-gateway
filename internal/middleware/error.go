@@ -39,21 +39,6 @@ var httpStatusMap = map[errs.ErrCode]int{
 
 func ErrorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if len(c.Errors) > 0 {
-			statusCode := c.MustGet("status_code").(int)
-			code := c.MustGet("code").(string)
-			message := c.MustGet("message").(string)
-
-			c.AbortWithStatusJSON(statusCode, dto.ResponseError{
-				Error: dto.Error{
-					Code:    code,
-					Message: message,
-				},
-			})
-
-			return
-		}
-
 		c.Next()
 
 		if len(c.Errors) == 0 {

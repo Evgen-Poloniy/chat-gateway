@@ -12,15 +12,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/time/rate"
 )
 
 // APIKeyAuth checks request on API-Key availability and validity.
-func APIKeyAuth(apiKeyHash []byte) gin.HandlerFunc {
+func APIKeyAuth(apiKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		key := c.GetHeader("X-API-Key")
+		if key == "" {
 			c.Error(errs.NewAppError(
 				errs.CodeMissingAuthHeaders,
 				errs.ErrMissingAuthHeader.Error(),
@@ -30,20 +29,7 @@ func APIKeyAuth(apiKeyHash []byte) gin.HandlerFunc {
 			return
 		}
 
-		const prefix = "API-KEY "
-		if !strings.HasPrefix(authHeader, prefix) {
-			c.Error(errs.NewAppError(
-				errs.CodeWrongAuthHeader,
-				errs.ErrInvalidAuthHeader.Error(),
-				errs.ErrInvalidAuthHeader,
-			))
-			c.Abort()
-			return
-		}
-
-		apiKey := strings.TrimPrefix(authHeader, prefix)
-
-		if bcrypt.CompareHashAndPassword(apiKeyHash, []byte(apiKey)) != nil {
+		if key != apiKey {
 			c.Error(errs.NewAppError(
 				errs.CodeInvalidAPIKey,
 				errs.ErrInvalidAPIKey.Error(),
