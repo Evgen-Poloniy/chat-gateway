@@ -182,6 +182,78 @@ func TestPostgresRepository_GetUserDataByUserID(t *testing.T) {
 	}
 }
 
+func TestPostgresRepository_GetUserIDsByChatID(t *testing.T) {
+	query := `
+		SELECT user_id
+		FROM chat_members
+		WHERE chat_id = $1
+	`
+
+	chatID := uuid.New()
+	userID1 := uuid.New()
+
+	tests := []struct {
+		name              string
+		chatID            uuid.UUID
+		mock              func(mock sqlmock.Sqlmock)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
+	}{
+		{
+			name:   "Success",
+			chatID: chatID,
+			mock: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"user_id"}).
+					AddRow(userID1)
+
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WithArgs(chatID).
+					WillReturnRows(rows)
+			},
+			wantErr: false,
+		},
+		{
+			name:   "Error - Query Failed",
+			chatID: chatID,
+			mock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WithArgs(chatID).
+					WillReturnError(errDBQueryFailed)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			repo := postgres.NewPostgresRepository(db)
+			tt.mock(mock)
+
+			userIDs, err := repo.GetUserIDsByChatID(context.Background(), tt.chatID)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
+				assert.Nil(t, userIDs)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, userIDs)
+				require.Len(t, userIDs, 1)
+				assert.Equal(t, userID1, userIDs[0])
+			}
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
 func TestPostgresRepository_CreateUser(t *testing.T) {
 	now := time.Now()
 	userID := uuid.New()
@@ -298,78 +370,6 @@ func TestPostgresRepository_CreateUser(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, userID, tt.input.UserID)
 				assert.NotNil(t, tt.input.CreatedAt)
-			}
-
-			assert.NoError(t, mock.ExpectationsWereMet())
-		})
-	}
-}
-
-func TestPostgresRepository_GetUserIDsByChatID(t *testing.T) {
-	query := `
-		SELECT user_id
-		FROM chat_members
-		WHERE chat_id = $1
-	`
-
-	chatID := uuid.New()
-	userID1 := uuid.New()
-
-	tests := []struct {
-		name              string
-		chatID            uuid.UUID
-		mock              func(mock sqlmock.Sqlmock)
-		wantErr           bool
-		expectedErrorCode errs.ErrCode
-	}{
-		{
-			name:   "Success",
-			chatID: chatID,
-			mock: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"user_id"}).
-					AddRow(userID1)
-
-				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(chatID).
-					WillReturnRows(rows)
-			},
-			wantErr: false,
-		},
-		{
-			name:   "Error - Query Failed",
-			chatID: chatID,
-			mock: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(regexp.QuoteMeta(query)).
-					WithArgs(chatID).
-					WillReturnError(errDBQueryFailed)
-			},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeQueryError,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db, mock, cleanup := setupMockDB(t)
-			defer cleanup()
-
-			repo := postgres.NewPostgresRepository(db)
-			tt.mock(mock)
-
-			userIDs, err := repo.GetUserIDsByChatID(context.Background(), tt.chatID)
-
-			if tt.wantErr {
-				assert.Error(t, err)
-				var appErr *errs.AppError
-				if assert.ErrorAs(t, err, &appErr) {
-					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
-				}
-				assert.Nil(t, userIDs)
-			} else {
-				assert.NoError(t, err)
-				require.NotNil(t, userIDs)
-				require.Len(t, userIDs, 1)
-				assert.Equal(t, userID1, userIDs[0])
 			}
 
 			assert.NoError(t, mock.ExpectationsWereMet())
@@ -524,6 +524,77 @@ func TestPostgresRepository_UpdateUser(t *testing.T) {
 			tt.mock(mock, tt.input)
 
 			err := repo.UpdateUser(context.Background(), tt.input)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestPostgresRepository_DeleteUser(t *testing.T) {
+	userID := uuid.New()
+
+	query := "DELETE FROM users WHERE user_id = $1"
+
+	tests := []struct {
+		name              string
+		input             uuid.UUID
+		mock              func(mock sqlmock.Sqlmock, userID uuid.UUID)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
+	}{
+		{
+			name:  "Success",
+			input: userID,
+			mock: func(mock sqlmock.Sqlmock, userID uuid.UUID) {
+				mock.ExpectExec(regexp.QuoteMeta(query)).
+					WithArgs(userID).
+					WillReturnResult(sqlmock.NewResult(0, 1))
+			},
+			wantErr: false,
+		},
+		{
+			name:  "Error - User Not Found",
+			input: userID,
+			mock: func(mock sqlmock.Sqlmock, userID uuid.UUID) {
+				mock.ExpectExec(regexp.QuoteMeta(query)).
+					WithArgs(userID).
+					WillReturnResult(sqlmock.NewResult(0, 0))
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUserNotFound,
+		},
+		{
+			name:  "Error - Query Failed",
+			input: userID,
+			mock: func(mock sqlmock.Sqlmock, userID uuid.UUID) {
+				mock.ExpectExec(regexp.QuoteMeta(query)).
+					WithArgs(userID).
+					WillReturnError(errDBQueryFailed)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			repo := postgres.NewPostgresRepository(db)
+			tt.mock(mock, tt.input)
+
+			err := repo.DeleteUser(context.Background(), tt.input)
 
 			if tt.wantErr {
 				assert.Error(t, err)

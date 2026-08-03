@@ -186,6 +186,138 @@ func TestMessengerService_GetUserDataByUserID(t *testing.T) {
 	}
 }
 
+func TestMessengerService_GetUserIDsByChatID(t *testing.T) {
+	chatID := uuid.New()
+	userID1 := uuid.New()
+	userID2 := uuid.New()
+	userID3 := uuid.New()
+
+	tests := []struct {
+		name              string
+		input             uuid.UUID
+		mockCache         func(mock *mock_repository.MockMessengerCache)
+		mockRepo          func(mock *mock_repository.MockMessengerRepository)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
+	}{
+		{
+			name:  "Success - From Cache",
+			input: chatID,
+			mockCache: func(mock *mock_repository.MockMessengerCache) {
+				mock.EXPECT().
+					GetChatMembers(gomock.Any(), chatID.String()).
+					Return([]string{userID1.String(), userID2.String()}, nil)
+			},
+			mockRepo: func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:  false,
+		},
+		{
+			name:  "Success - From DB (Cache Empty)",
+			input: chatID,
+			mockCache: func(mock *mock_repository.MockMessengerCache) {
+				mock.EXPECT().
+					GetChatMembers(gomock.Any(), chatID.String()).
+					Return([]string{}, nil)
+			},
+			mockRepo: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					GetUserIDsByChatID(gomock.Any(), chatID).
+					Return([]uuid.UUID{userID1, userID2, userID3}, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name:  "Error - Chat Not Found (DB Empty)",
+			input: chatID,
+			mockCache: func(mock *mock_repository.MockMessengerCache) {
+				mock.EXPECT().
+					GetChatMembers(gomock.Any(), chatID.String()).
+					Return([]string{}, nil)
+			},
+			mockRepo: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					GetUserIDsByChatID(gomock.Any(), chatID).
+					Return([]uuid.UUID{}, nil)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeChatNotFound,
+		},
+		{
+			name:  "Error - Cache Failed",
+			input: chatID,
+			mockCache: func(mock *mock_repository.MockMessengerCache) {
+				mock.EXPECT().
+					GetChatMembers(gomock.Any(), chatID.String()).
+					Return(nil, errCacheFailed)
+			},
+			mockRepo:          func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeRedisError,
+		},
+		{
+			name:  "Error - DB Query Failed",
+			input: chatID,
+			mockCache: func(mock *mock_repository.MockMessengerCache) {
+				mock.EXPECT().
+					GetChatMembers(gomock.Any(), chatID.String()).
+					Return([]string{}, nil)
+			},
+			mockRepo: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					GetUserIDsByChatID(gomock.Any(), chatID).
+					Return(nil, errRepoQueryError)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+		{
+			name:  "Error - Invalid UUID in Cache",
+			input: chatID,
+			mockCache: func(mock *mock_repository.MockMessengerCache) {
+				mock.EXPECT().
+					GetChatMembers(gomock.Any(), chatID.String()).
+					Return([]string{"invalid-uuid"}, nil)
+			},
+			mockRepo:          func(mock *mock_repository.MockMessengerRepository) {},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeValidationError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc, mockRepo, _, mockCache := setupMockService(ctrl)
+
+			tt.mockCache(mockCache)
+			tt.mockRepo(mockRepo)
+
+			userIDs, err := svc.GetUserIDsByChatID(context.Background(), tt.input)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
+				assert.Nil(t, userIDs)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, userIDs)
+				if tt.name == "Success - From Cache" {
+					assert.Len(t, userIDs, 2)
+					assert.ElementsMatch(t, []uuid.UUID{userID1, userID2}, userIDs)
+				} else if tt.name == "Success - From DB (Cache Empty)" {
+					assert.Len(t, userIDs, 3)
+					assert.ElementsMatch(t, []uuid.UUID{userID1, userID2, userID3}, userIDs)
+				}
+			}
+		})
+	}
+}
+
 func TestMessengerService_CreateUser(t *testing.T) {
 	now := time.Now()
 	generatedUUID := uuid.New()
@@ -363,138 +495,6 @@ func TestMessengerService_CreateUser(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, generatedUUID, tt.input.UserID)
 				assert.False(t, tt.input.CreatedAt.IsZero())
-			}
-		})
-	}
-}
-
-func TestMessengerService_GetUserIDsByChatID(t *testing.T) {
-	chatID := uuid.New()
-	userID1 := uuid.New()
-	userID2 := uuid.New()
-	userID3 := uuid.New()
-
-	tests := []struct {
-		name              string
-		input             uuid.UUID
-		mockCache         func(mock *mock_repository.MockMessengerCache)
-		mockRepo          func(mock *mock_repository.MockMessengerRepository)
-		wantErr           bool
-		expectedErrorCode errs.ErrCode
-	}{
-		{
-			name:  "Success - From Cache",
-			input: chatID,
-			mockCache: func(mock *mock_repository.MockMessengerCache) {
-				mock.EXPECT().
-					GetChatMembers(gomock.Any(), chatID.String()).
-					Return([]string{userID1.String(), userID2.String()}, nil)
-			},
-			mockRepo: func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:  false,
-		},
-		{
-			name:  "Success - From DB (Cache Empty)",
-			input: chatID,
-			mockCache: func(mock *mock_repository.MockMessengerCache) {
-				mock.EXPECT().
-					GetChatMembers(gomock.Any(), chatID.String()).
-					Return([]string{}, nil)
-			},
-			mockRepo: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
-					GetUserIDsByChatID(gomock.Any(), chatID).
-					Return([]uuid.UUID{userID1, userID2, userID3}, nil)
-			},
-			wantErr: false,
-		},
-		{
-			name:  "Error - Chat Not Found (DB Empty)",
-			input: chatID,
-			mockCache: func(mock *mock_repository.MockMessengerCache) {
-				mock.EXPECT().
-					GetChatMembers(gomock.Any(), chatID.String()).
-					Return([]string{}, nil)
-			},
-			mockRepo: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
-					GetUserIDsByChatID(gomock.Any(), chatID).
-					Return([]uuid.UUID{}, nil)
-			},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeChatNotFound,
-		},
-		{
-			name:  "Error - Cache Failed",
-			input: chatID,
-			mockCache: func(mock *mock_repository.MockMessengerCache) {
-				mock.EXPECT().
-					GetChatMembers(gomock.Any(), chatID.String()).
-					Return(nil, errCacheFailed)
-			},
-			mockRepo:          func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeRedisError,
-		},
-		{
-			name:  "Error - DB Query Failed",
-			input: chatID,
-			mockCache: func(mock *mock_repository.MockMessengerCache) {
-				mock.EXPECT().
-					GetChatMembers(gomock.Any(), chatID.String()).
-					Return([]string{}, nil)
-			},
-			mockRepo: func(mock *mock_repository.MockMessengerRepository) {
-				mock.EXPECT().
-					GetUserIDsByChatID(gomock.Any(), chatID).
-					Return(nil, errRepoQueryError)
-			},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeQueryError,
-		},
-		{
-			name:  "Error - Invalid UUID in Cache",
-			input: chatID,
-			mockCache: func(mock *mock_repository.MockMessengerCache) {
-				mock.EXPECT().
-					GetChatMembers(gomock.Any(), chatID.String()).
-					Return([]string{"invalid-uuid"}, nil)
-			},
-			mockRepo:          func(mock *mock_repository.MockMessengerRepository) {},
-			wantErr:           true,
-			expectedErrorCode: errs.CodeValidationError,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			svc, mockRepo, _, mockCache := setupMockService(ctrl)
-
-			tt.mockCache(mockCache)
-			tt.mockRepo(mockRepo)
-
-			userIDs, err := svc.GetUserIDsByChatID(context.Background(), tt.input)
-
-			if tt.wantErr {
-				assert.Error(t, err)
-				var appErr *errs.AppError
-				if assert.ErrorAs(t, err, &appErr) {
-					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
-				}
-				assert.Nil(t, userIDs)
-			} else {
-				assert.NoError(t, err)
-				require.NotNil(t, userIDs)
-				if tt.name == "Success - From Cache" {
-					assert.Len(t, userIDs, 2)
-					assert.ElementsMatch(t, []uuid.UUID{userID1, userID2}, userIDs)
-				} else if tt.name == "Success - From DB (Cache Empty)" {
-					assert.Len(t, userIDs, 3)
-					assert.ElementsMatch(t, []uuid.UUID{userID1, userID2, userID3}, userIDs)
-				}
 			}
 		})
 	}
@@ -689,6 +689,74 @@ func TestMessengerService_UpdateUser(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, "updated_in_db", *tt.input.Username)
+			}
+		})
+	}
+}
+
+func TestMessengerService_DeleteUser(t *testing.T) {
+	userID := uuid.New()
+
+	tests := []struct {
+		name              string
+		input             uuid.UUID
+		mock              func(mock *mock_repository.MockMessengerRepository)
+		wantErr           bool
+		expectedErrorCode errs.ErrCode
+	}{
+		{
+			name:  "Success",
+			input: userID,
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					DeleteUser(gomock.Any(), userID).
+					Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name:  "Error - User Not Found",
+			input: userID,
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					DeleteUser(gomock.Any(), userID).
+					Return(errRepoUserNotFound)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeUserNotFound,
+		},
+		{
+			name:  "Error - Query Failed",
+			input: userID,
+			mock: func(mock *mock_repository.MockMessengerRepository) {
+				mock.EXPECT().
+					DeleteUser(gomock.Any(), userID).
+					Return(errRepoQueryError)
+			},
+			wantErr:           true,
+			expectedErrorCode: errs.CodeQueryError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc, mockRepo, _, _ := setupMockService(ctrl)
+
+			tt.mock(mockRepo)
+
+			err := svc.DeleteUser(context.Background(), tt.input)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				var appErr *errs.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.expectedErrorCode, appErr.Code)
+				}
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

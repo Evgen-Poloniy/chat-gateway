@@ -84,6 +84,20 @@ func (mr *MockMessengerRepositoryMockRecorder) CreateUser(ctx, user any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockMessengerRepository)(nil).CreateUser), ctx, user)
 }
 
+// DeleteUser mocks base method.
+func (m *MockMessengerRepository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUser", ctx, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockMessengerRepositoryMockRecorder) DeleteUser(ctx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockMessengerRepository)(nil).DeleteUser), ctx, userID)
+}
+
 // GetChatsByUserID mocks base method.
 func (m *MockMessengerRepository) GetChatsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]model.Chat, error) {
 	m.ctrl.T.Helper()

@@ -1,95 +1,149 @@
 package v1
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/Evgen-Poloniy/chat-gateway/internal/dto"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/entity"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/errs"
+	"github.com/Evgen-Poloniy/chat-gateway/internal/utils"
 	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterUser register user by username and details about user.
-func (h *Handler) RegisterUser(c *gin.Context) {
-	var req dto.RegisterUserReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(errs.NewAppError(
-			errs.CodeBadRequest,
-			err.Error(),
-			err,
-		))
+// SyncUser processes signup and update-user webhook actions from Casdoor.
+func (h *Handler) SingUpUser(c *gin.Context) {
+	var webhook dto.CasdoorWebhookReq
+	if err := c.ShouldBindJSON(&webhook); err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, err.Error(), err))
+		return
+	}
+
+	if webhook.Action != "signup" {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, "action must be signup", nil))
+		return
+	}
+
+	var req dto.SignUpUser
+	if err := json.Unmarshal(webhook.ExtendedUser, &req); err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, err.Error(), err))
+		return
+	}
+
+	userUUID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, "invalid user uuid", err))
+		return
+	}
+
+	birthDate, err := utils.ParseDate(req.Birthday)
+	if err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, "invalid birthday format", err))
 		return
 	}
 
 	user := &entity.User{
+		UserID:    userUUID,
 		Username:  req.Username,
 		Email:     req.Email,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
-		BirthDate: req.BirthDate,
+		BirthDate: birthDate,
 		Gender:    req.Gender,
 	}
 
 	if err := h.messenger.CreateUser(c.Request.Context(), user); err != nil {
 		c.Error(err)
+		return
 	}
 
-	resp := dto.UserDataResp{
-		UserID:    user.UserID,
-		Username:  user.Username,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		BirthDate: user.BirthDate,
-		CreatedAt: user.CreatedAt,
-		Gender:    user.Gender,
-	}
-
-	c.JSON(http.StatusCreated, dto.DataResp{Data: resp})
+	c.Status(http.StatusNoContent)
 }
 
-// // UpdateChat updates data about chat like name, title, description, owner.
-// func (h *Handler) UpdateUser(c *gin.Context) {
-// 	var req dto.UpdateUserReq
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		c.Error(errs.NewAppError(
-// 			errs.CodeBadRequest,
-// 			err.Error(),
-// 			err,
-// 		))
-// 		return
-// 	}
+// UpdateUser updates user's information into the messenger database.
+func (h *Handler) UpdateUser(c *gin.Context) {
+	var webhook dto.CasdoorWebhookReq
+	if err := c.ShouldBindJSON(&webhook); err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, err.Error(), err))
+		return
+	}
 
-// 	user := &entity.UpdateUser{
-// 		UserID:    userID,
-// 		Username:  req.Username,
-// 		Email:     req.Email,
-// 		FirstName: req.FirstName,
-// 		LastName:  req.LastName,
-// 		BirthDate: req.BirthDate,
-// 		Gender:    req.Gender,
-// 	}
+	if webhook.Action != "update-user" {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, "action must be update-user", nil))
+		return
+	}
 
-// 	if err := h.messenger.UpdateUser(c.Request.Context(), user); err != nil {
-// 		c.Error(err)
-// 	}
+	var req dto.UpdateUser
+	if err := json.Unmarshal(webhook.ExtendedUser, &req); err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, err.Error(), err))
+		return
+	}
 
-// 	resp := dto.UserDataResp{
-// 		UserID:    user.UserID,
-// 		Username:  *user.Username,
-// 		Email:     user.Email,
-// 		FirstName: user.FirstName,
-// 		LastName:  user.LastName,
-// 		BirthDate: user.BirthDate,
-// 		CreatedAt: user.CreatedAt,
-// 		Gender:    user.Gender,
-// 	}
+	userUUID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, "invalid user uuid", err))
+		return
+	}
 
-// 	c.JSON(http.StatusOK, dto.DataResp{Data: resp})
-// }
+	birthDate, err := utils.ParseDate(req.Birthday)
+	if err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, "invalid birthday format", err))
+		return
+	}
+
+	user := &entity.UpdateUser{
+		UserID:    userUUID,
+		Username:  req.Username,
+		Email:     req.Email,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		BirthDate: birthDate,
+		Gender:    req.Gender,
+	}
+
+	if err := h.messenger.UpdateUser(c.Request.Context(), user); err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// DeleteUser processes delete-user webhook action from Casdoor.
+func (h *Handler) DeleteUser(c *gin.Context) {
+	var webhook dto.CasdoorWebhookReq
+	if err := c.ShouldBindJSON(&webhook); err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, err.Error(), err))
+		return
+	}
+
+	if webhook.Action != "delete-user" {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, "action must be delete-user", nil))
+		return
+	}
+
+	var req dto.DeleteUser
+	if err := json.Unmarshal(webhook.ExtendedUser, &req); err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, err.Error(), err))
+		return
+	}
+
+	userUUID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		c.Error(errs.NewAppError(errs.CodeBadRequest, "invalid user uuid", err))
+		return
+	}
+
+	if err := h.messenger.DeleteUser(c.Request.Context(), userUUID); err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
 
 // SearchUser represents searching all data about user from the messenger database.
 func (h *Handler) SearchUser(c *gin.Context) {

@@ -1,24 +1,32 @@
 package v1
 
 import (
-	"github.com/Evgen-Poloniy/chat-gateway/internal/config"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/middleware"
-	"github.com/MicahParks/keyfunc/v3"
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(router *gin.Engine, handler *Handler, jwks keyfunc.Keyfunc, config *config.AuthConfig) {
+func NewRouter(router *gin.Engine, handler *Handler) {
 	v1 := router.Group("/api/v1")
+	v1.Use(
+		middleware.Logger(handler.logger),
+		middleware.ErrorHandler(),
+	)
 
-	auth := v1.Group("/auth")
+	webhooks := v1.Group("/webhooks")
 	{
-		auth.POST("/register", handler.RegisterUser)
+		casdoor := webhooks.Group("/casdoor")
+		casdoor.Use(middleware.APIKeyAuth(handler.config.IdPApiKey))
+		{
+			casdoor.POST("/users", handler.SingUpUser)
+			casdoor.PUT("/users", handler.UpdateUser)
+			casdoor.DELETE("/users", handler.DeleteUser)
+		}
 	}
 
 	protected := v1.Group("")
 	protected.Use(
-		middleware.APIKeyAuth(config.ApiKeyHash),
-		middleware.AuthMiddleware(jwks, config),
+		middleware.APIKeyAuth(handler.config.ApiKey),
+		middleware.AuthMiddleware(handler.jwks, handler.config),
 	)
 	{
 		chats := protected.Group("/chats")
@@ -34,7 +42,6 @@ func NewRouter(router *gin.Engine, handler *Handler, jwks keyfunc.Keyfunc, confi
 		{
 			users.GET("", handler.SearchUser)
 			users.GET("/:user_id", handler.GetUserDataByUserID)
-			users.PATCH("/:user_id", handler.UpdateUser)
 		}
 	}
 }

@@ -18,6 +18,12 @@ type MessengerService interface {
 	// CreateUser allows create user into messenger by template.
 	CreateUser(ctx context.Context, user *entity.User) error
 
+	// UpdateUser updates data about user into messenger database.
+	UpdateUser(ctx context.Context, user *entity.UpdateUser) error
+
+	// DeleteUser deletes user from the messenger database.
+	DeleteUser(ctx context.Context, userID uuid.UUID) error
+
 	// GetUserDataByUsername represents searching all data about user from the messenger database.
 	GetUserDataByUsername(ctx context.Context, username string) (*entity.User, error)
 
@@ -26,9 +32,6 @@ type MessengerService interface {
 
 	// GetUserIDsByChatID gets user_id by all users who are in the chat.
 	GetUserIDsByChatID(ctx context.Context, chatID uuid.UUID) (uuid.UUIDs, error)
-
-	// UpdateUser updates data about user into messenger database.
-	UpdateUser(ctx context.Context, user *entity.UpdateUser) error
 
 	// Chats:
 

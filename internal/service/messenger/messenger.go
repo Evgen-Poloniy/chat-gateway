@@ -21,6 +21,12 @@ type MessengerRepository interface {
 	// CreateUser allows create user into messenger database.
 	CreateUser(ctx context.Context, user *model.User) error
 
+	// UpdateUser updates data about user into messenger database.
+	UpdateUser(ctx context.Context, user *model.UpdateUser) error
+
+	// DeleteUser deletes user from the messenger database.
+	DeleteUser(ctx context.Context, userID uuid.UUID) error
+
 	// GetUserDataByUsername represents searching all data about user from the messenger database.
 	GetUserDataByUsername(ctx context.Context, username string) (*model.User, error)
 
@@ -29,9 +35,6 @@ type MessengerRepository interface {
 
 	// GetUserIDsByChatID gets user_id by all users who are in the chat.
 	GetUserIDsByChatID(ctx context.Context, chatID uuid.UUID) (uuid.UUIDs, error)
-
-	// UpdateUser updates data about user into messenger database.
-	UpdateUser(ctx context.Context, user *model.UpdateUser) error
 
 	// Chats:
 
