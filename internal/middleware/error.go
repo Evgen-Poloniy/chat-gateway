@@ -29,6 +29,7 @@ var httpStatusMap = map[errs.ErrCode]int{
 	errs.CodeSerializationError:   http.StatusInternalServerError,
 	errs.CodeDeserializationError: http.StatusInternalServerError,
 	errs.CodeRedisError:           http.StatusInternalServerError,
+	errs.CodeKafkaError:           http.StatusInternalServerError,
 	errs.CodeFailedToExpireKey:    http.StatusInternalServerError,
 	errs.CodeFailedEventChannel:   http.StatusInternalServerError,
 	errs.CodeDeliveryFailed:       http.StatusInternalServerError,

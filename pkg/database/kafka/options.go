@@ -1,63 +1,63 @@
 package kafka
 
-import (
-	"fmt"
+type Config struct {
+	BootstrapServers []string
+	Acks             string
+	Retries          int
+	LingerMs         int
+	BatchNumMessages int
+	CompressionType  string
+	MessageTimeoutMs int
 
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-)
+	SecurityProtocol string
+	SASLMechanism    string
+	SASLUsername     string
+	SASLPassword     string
+}
 
-// Option defines a function type to safely mutate the base kafka.ConfigMap.
-type Option func(cm *kafka.ConfigMap) error
+type Option func(cfg *Config) error
 
 // WithSecurityProtocol sets the communication protocol (e.g., SASL_SSL, SASL_PLAINTEXT).
 // It ignores empty strings or standard unencrypted PLAINTEXT.
 func WithSecurityProtocol(protocol string) Option {
-	return func(cm *kafka.ConfigMap) error {
+	return func(cfg *Config) error {
 		if protocol == "" || protocol == "PLAINTEXT" {
 			return nil
 		}
-		if err := cm.SetKey("security.protocol", protocol); err != nil {
-			return fmt.Errorf("failed to set security.protocol: %w", err)
-		}
+		cfg.SecurityProtocol = protocol
 		return nil
 	}
 }
 
 // WithSASLMechanism sets the SASL authentication mechanism (e.g., PLAIN, SCRAM-SHA-512).
 func WithSASLMechanism(mechanism string) Option {
-	return func(cm *kafka.ConfigMap) error {
+	return func(cfg *Config) error {
 		if mechanism == "" {
 			return nil
 		}
-		if err := cm.SetKey("sasl.mechanism", mechanism); err != nil {
-			return fmt.Errorf("failed to set sasl.mechanism: %w", err)
-		}
+		cfg.SASLMechanism = mechanism
 		return nil
 	}
 }
 
 // WithSASLUsername sets the username for SASL authentication.
 func WithSASLUsername(username string) Option {
-	return func(cm *kafka.ConfigMap) error {
+	return func(cfg *Config) error {
 		if username == "" {
 			return nil
 		}
-		if err := cm.SetKey("sasl.username", username); err != nil {
-			return fmt.Errorf("failed to set sasl.username: %w", err)
-		}
+		cfg.SASLUsername = username
 		return nil
 	}
 }
 
 // WithSASLPassword sets the password for SASL authentication.
 func WithSASLPassword(password string) Option {
-	return func(cm *kafka.ConfigMap) error {
+	return func(cfg *Config) error {
 		if password == "" {
 			return nil
 		}
-		if err := cm.SetKey("sasl.password", password); err != nil {
-			return fmt.Errorf("failed to set sasl.password: %w", err)
-		}
+		cfg.SASLPassword = password
 		return nil
 	}
 }

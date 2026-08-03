@@ -22,6 +22,7 @@ const (
 	CodeInvalidParameter     ErrCode = "invalid_parameter"
 	CodeValidationError      ErrCode = "validation_error"
 	CodeRedisError           ErrCode = "redis_error"
+	CodeKafkaError           ErrCode = "kafka_error"
 	CodeFailedToExpireKey    ErrCode = "failed_to_expire_key"
 	CodeFailedEventChannel   ErrCode = "failed_event_channel"
 	CodeEmptyUserIDs         ErrCode = "empty_user_ids"

@@ -37,9 +37,6 @@ postgres:
   conn_max_idle_lifetime: 2m # seconds, minutes
 
 kafka:
-  # Broker addresses
-  bootstrap.servers: "localhost:9090"
-
   # --- Reliability & Delivery Guarantees ---
   # Wait for all in-sync replicas (ISR) to acknowledge. Prevents message loss.
   acks: "all"

@@ -1,16 +1,15 @@
 package kafka
 
 import (
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/segmentio/kafka-go"
 )
 
-// PostgresRepository represents implementation of interface MessengerRepository
 type KafkaRepository struct {
-	producer *kafka.Producer
+	writer *kafka.Writer
 }
 
-func NewKafkaRepository(producer *kafka.Producer) *KafkaRepository {
+func NewKafkaRepository(writer *kafka.Writer) *KafkaRepository {
 	return &KafkaRepository{
-		producer: producer,
+		writer: writer,
 	}
 }

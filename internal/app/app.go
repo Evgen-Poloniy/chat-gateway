@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -22,11 +23,10 @@ import (
 	router "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http"
 	v1 "github.com/Evgen-Poloniy/chat-gateway/internal/transport/http/v1"
 	"github.com/Evgen-Poloniy/chat-gateway/internal/transport/ws"
-	kfkp "github.com/Evgen-Poloniy/chat-gateway/pkg/database/kafka"
+	kfpc "github.com/Evgen-Poloniy/chat-gateway/pkg/database/kafka"
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/database/postgres"
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/database/redis"
 	"github.com/Evgen-Poloniy/chat-gateway/pkg/logs"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/sirupsen/logrus"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -78,50 +78,29 @@ func Run() {
 		}
 	}()
 
-	configMap := kafka.ConfigMap{
-		"bootstrap.servers":                     config.Kafka.BootstrapServers,
-		"acks":                                  config.Kafka.Acks,
-		"enable.idempotence":                    config.Kafka.EnableIdempotence,
-		"retries":                               config.Kafka.Retries,
-		"max.in.flight.requests.per.connection": config.Kafka.MaxInFlightRequestsPerConn,
-		"linger.ms":                             config.Kafka.LingerMs,
-		"batch.num.messages":                    config.Kafka.BatchNumMessages,
-		"compression.type":                      config.Kafka.CompressionType,
-		"queue.buffering.max.messages":          config.Kafka.QueueBufferingMaxMessages,
-		"message.timeout.ms":                    config.Kafka.MessageTimeout,
-		"num.partitions":                        config.Kafka.NumPartitions,
+	kafkaCfg := &kfpc.Config{
+		BootstrapServers: strings.Split(config.Kafka.BootstrapServers, ","),
+		Acks:             config.Kafka.Acks,
+		Retries:          config.Kafka.Retries,
+		LingerMs:         config.Kafka.LingerMs,
+		BatchNumMessages: config.Kafka.BatchNumMessages,
+		CompressionType:  config.Kafka.CompressionType,
+		MessageTimeoutMs: config.Kafka.MessageTimeout,
 	}
 
-	producer, err := kfkp.NewKafkaProducer(&configMap)
+	producer, err := kfpc.NewKafkaProducer(
+		kafkaCfg,
+		kfpc.WithSecurityProtocol(config.Kafka.SecurityProtocol),
+		kfpc.WithSASLMechanism(config.Kafka.SASLMechanism),
+		kfpc.WithSASLUsername(config.Kafka.User),
+		kfpc.WithSASLPassword(config.Kafka.Password),
+	)
 	if err != nil {
 		logger.Fatalf("message broker error: %v", err)
 	}
 	defer func() {
-		unflushedCount := producer.Flush(config.Kafka.FlashTimeout * 1000)
-		if unflushedCount > 0 {
-			logger.Warnf("warning: %d messages were not flushed and might be lost", unflushedCount)
-		}
-
-		producer.Close()
-	}()
-	go func() {
-		for e := range producer.Events() {
-			switch ev := e.(type) {
-			case *kafka.Message:
-				if ev.TopicPartition.Error != nil {
-					logger.WithFields(map[string]interface{}{
-						"topic":     ev.TopicPartition.Topic,
-						"partition": ev.TopicPartition.Partition,
-						"code":      "kafka_error",
-					}).Error(fmt.Sprintf("kafka delivery error: %v", ev.TopicPartition.Error))
-				} else {
-					logger.WithFields(map[string]interface{}{
-						"topic":     ev.TopicPartition.Topic,
-						"partition": ev.TopicPartition.Partition,
-						"offset":    ev.TopicPartition.Offset,
-					}).Info("kafka message delivered")
-				}
-			}
+		if err := producer.Close(); err != nil {
+			logger.Errorf("error when closing message broker: %v", err)
 		}
 	}()
 

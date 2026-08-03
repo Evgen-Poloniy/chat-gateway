@@ -69,22 +69,17 @@ type PostgresConfig struct {
 
 // KafkaConfig represents broker config from env and config.yaml.
 type KafkaConfig struct {
-	BootstrapServers           string `env:"KAFKA_BOOTSTRAP_SERVERS" env-required:"true"`
-	User                       string `env:"KAFKA_USER"`
-	Password                   string `env:"KAFKA_PASSWORD"`
-	SASLMechanism              string `env:"KAFKA_SASL_MECHANISM" validate:"omitempty,oneof=PLAIN SCRAM-SHA-256 SCRAM-SHA-512"`
-	SecurityProtocol           string `env:"KAFKA_SECURITY_PROTOCOL" validate:"omitempty,oneof=PLAINTEXT SASL_PLAINTEXT SASL_SSL SSL"`
-	Acks                       string `yaml:"acks"`
-	EnableIdempotence          bool   `yaml:"enable_idempotence"`
-	Retries                    int    `yaml:"retries"`
-	MaxInFlightRequestsPerConn int    `yaml:"max_in_flight_requests_per_connection"`
-	LingerMs                   int    `yaml:"linger_ms"`
-	BatchNumMessages           int    `yaml:"batch_num_messages"`
-	CompressionType            string `yaml:"compression_type" validate:"oneof=none gzip snappy lz4 zstd"`
-	QueueBufferingMaxMessages  int    `yaml:"queue_buffering_max_messages"`
-	MessageTimeout             int    `yaml:"message_timeout_ms"`
-	NumPartitions              int    `yaml:"num_partitions"`
-	FlashTimeout               int    `yaml:"flash_timeout"`
+	BootstrapServers string `env:"KAFKA_BOOTSTRAP_SERVERS" env-required:"true"`
+	User             string `env:"KAFKA_USER"`
+	Password         string `env:"KAFKA_PASSWORD"`
+	SASLMechanism    string `env:"KAFKA_SASL_MECHANISM" validate:"omitempty,oneof=PLAIN SCRAM-SHA-256 SCRAM-SHA-512"`
+	SecurityProtocol string `env:"KAFKA_SECURITY_PROTOCOL" validate:"omitempty,oneof=PLAINTEXT SASL_PLAINTEXT SASL_SSL SSL"`
+	Acks             string `yaml:"acks"`
+	Retries          int    `yaml:"retries"`
+	LingerMs         int    `yaml:"linger_ms"`
+	BatchNumMessages int    `yaml:"batch_num_messages"`
+	CompressionType  string `yaml:"compression_type" validate:"oneof=none gzip snappy lz4 zstd"`
+	MessageTimeout   int    `yaml:"message_timeout_ms"`
 }
 
 // RedisConfig is the structure for save cache config
